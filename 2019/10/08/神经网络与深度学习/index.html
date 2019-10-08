@@ -60,14 +60,14 @@
   <meta name="description" content="&amp;emsp;&amp;emsp;深度学习是机器学习研究中的一个新的领域，其动机在于建立、模拟人脑进行分析学习的神经网络。它模仿人脑的机制来解释数字，例如图像，声音和文本等。深度学习是无监督学习的一种。深度学习的概念源于人工神经网络的研究。含多隐层的多层感知器就是一种深度学习结构。">
 <meta name="keywords" content="Deep Learning,Algorithm">
 <meta property="og:type" content="article">
-<meta property="og:title" content="神经网络与深度学习小结（1）">
+<meta property="og:title" content="ANN与Deep Learning小结">
 <meta property="og:url" content="http://xuwentao.com/2019/10/08/神经网络与深度学习/index.html">
 <meta property="og:site_name" content="Y&amp;B">
 <meta property="og:description" content="&amp;emsp;&amp;emsp;深度学习是机器学习研究中的一个新的领域，其动机在于建立、模拟人脑进行分析学习的神经网络。它模仿人脑的机制来解释数字，例如图像，声音和文本等。深度学习是无监督学习的一种。深度学习的概念源于人工神经网络的研究。含多隐层的多层感知器就是一种深度学习结构。">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-08T11:25:37.710Z">
+<meta property="og:updated_time" content="2019-10-08T12:07:28.968Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="神经网络与深度学习小结（1）">
+<meta name="twitter:title" content="ANN与Deep Learning小结">
 <meta name="twitter:description" content="&amp;emsp;&amp;emsp;深度学习是机器学习研究中的一个新的领域，其动机在于建立、模拟人脑进行分析学习的神经网络。它模仿人脑的机制来解释数字，例如图像，声音和文本等。深度学习是无监督学习的一种。深度学习的概念源于人工神经网络的研究。含多隐层的多层感知器就是一种深度学习结构。">
   <link rel="canonical" href="http://xuwentao.com/2019/10/08/神经网络与深度学习/">
 
@@ -83,7 +83,7 @@
   };
 </script>
 
-  <title>神经网络与深度学习小结（1） | Y&B</title>
+  <title>ANN与Deep Learning小结 | Y&B</title>
   
 
 
@@ -258,7 +258,7 @@
       <meta itemprop="name" content="Y&B">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">神经网络与深度学习小结（1）
+        <h1 class="post-title" itemprop="name headline">ANN与Deep Learning小结
 
           
         </h1>
@@ -274,7 +274,7 @@
                 
               
 
-              <time title="创建时间：2019-10-08 17:00:07 / 修改时间：19:25:37" itemprop="dateCreated datePublished" datetime="2019-10-08T17:00:07+08:00">2019-10-08</time>
+              <time title="创建时间：2019-10-08 17:00:07 / 修改时间：20:07:28" itemprop="dateCreated datePublished" datetime="2019-10-08T17:00:07+08:00">2019-10-08</time>
             </span>
           
             
@@ -333,7 +333,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>167</span>
+              <span>501</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -358,7 +358,11 @@
       
         <p>&emsp;&emsp;深度学习是机器学习研究中的一个新的领域，其动机在于建立、模拟人脑进行分析学习的神经网络。它模仿人脑的机制来解释数字，例如图像，声音和文本等。深度学习是无监督学习的一种。深度学习的概念源于人工神经网络的研究。含多隐层的多层感知器就是一种深度学习结构。</p>
 <a id="more"></a>
-<h2 id="前向传播"><a href="#前向传播" class="headerlink" title="#前向传播"></a>#前向传播</h2><h2 id="反向传播"><a href="#反向传播" class="headerlink" title="#反向传播"></a>#反向传播</h2><h2 id="参数矩阵的维度"><a href="#参数矩阵的维度" class="headerlink" title="#参数矩阵的维度"></a>#参数矩阵的维度</h2><h2 id="非线性激活函数的对比分析"><a href="#非线性激活函数的对比分析" class="headerlink" title="#非线性激活函数的对比分析"></a>#非线性激活函数的对比分析</h2>
+<h1 id="前向传播"><a href="#前向传播" class="headerlink" title="前向传播"></a>前向传播</h1><p> &emsp;&emsp;pass</p>
+<h1 id="反向传播"><a href="#反向传播" class="headerlink" title="反向传播"></a>反向传播</h1><p>&emsp;&emsp;反向传播（Backword Propagation）是“误差反向传播”的简称，是一种与梯度下降算法结合使用的，用来训练人工神经网络的重要算法。该算法通过计算损失函数对神经网络中各个权值的偏导数来最小化损失函数。是神经网络执行梯度下降算法的主要算法。该算法先前向计算出各个节点的状态以及输出值，然后再以反向计算损失函数对各个参数的偏导数。反向传播算法主要由激励传播和权值更新两个过程反复迭代，直到网络对输入的响应达到目标要求为止。本文将按照单一训练集介绍反向传播算法中重要公式的推导，后续扩展到m维训练集。<br>&emsp;&emsp;单一训练集时符号说明如下：</p>
+<h1 id="参数矩阵的维度"><a href="#参数矩阵的维度" class="headerlink" title="参数矩阵的维度"></a>参数矩阵的维度</h1><p>&emsp;&emsp;pass</p>
+<h1 id="非线性激活函数的对比分析"><a href="#非线性激活函数的对比分析" class="headerlink" title="非线性激活函数的对比分析"></a>非线性激活函数的对比分析</h1><p>&emsp;&emsp;pass</p>
+
     </div>
 
     
@@ -449,7 +453,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前向传播"><span class="nav-number">1.</span> <span class="nav-text">#前向传播</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#反向传播"><span class="nav-number">2.</span> <span class="nav-text">#反向传播</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参数矩阵的维度"><span class="nav-number">3.</span> <span class="nav-text">#参数矩阵的维度</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#非线性激活函数的对比分析"><span class="nav-number">4.</span> <span class="nav-text">#非线性激活函数的对比分析</span></a></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#前向传播"><span class="nav-number">1.</span> <span class="nav-text">前向传播</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#反向传播"><span class="nav-number">2.</span> <span class="nav-text">反向传播</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#参数矩阵的维度"><span class="nav-number">3.</span> <span class="nav-text">参数矩阵的维度</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#非线性激活函数的对比分析"><span class="nav-number">4.</span> <span class="nav-text">非线性激活函数的对比分析</span></a></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -585,7 +589,7 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">0k</span>
+    <span title="站点总字数">1k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
