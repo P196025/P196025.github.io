@@ -1,21 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[神经网络和深度学习]]></title>
-    <url>%2F2019%2F10%2F07%2F%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E5%92%8C%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0-1%2F</url>
-    <content type="text"><![CDATA[第一级标题第二级标题第三级标题 列表1 列表2 a 子列表 b 子列表哦 列表3 B站哦字体是倾斜的偶字体是加粗的哦 一行就是两个点 1234567想要写多行就得使用三个点 我的内容是引用的哦]]></content>
+    <title><![CDATA[神经网络与深度学习小结（1）]]></title>
+    <url>%2F2019%2F10%2F08%2F%E7%A5%9E%E7%BB%8F%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;深度学习是机器学习研究中的一个新的领域，其动机在于建立、模拟人脑进行分析学习的神经网络，它模仿人脑的机制来解释数字，例如图像，声音和文本。深度学习是无监督学习的一种。深度学习的概念源于人工神经网络的研究。含多隐层的多层感知器就是一种深度学习结构。 #前向传播#反向传播#参数矩阵的维度#常见非线性激活函数的对比分析]]></content>
       <categories>
-        <category>深度学习</category>
-        <category>算法</category>
+        <category>Deep Learning</category>
+        <category>Neural Network</category>
       </categories>
       <tags>
-        <tag>菜鸟</tag>
-        <tag>分享</tag>
+        <tag>Deep Learning</tag>
+        <tag>Algorithm</tag>
       </tags>
-  </entry>
-  <entry>
-    <title><![CDATA[今天是个好日子]]></title>
-    <url>%2F2019%2F10%2F07%2Fhello-world%2F</url>
-    <content type="text"><![CDATA[Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick StartCreate a new post1$ hexo new "My New Post" More info: Writing Run server1$ hexo server More info: Server Generate static files1$ hexo generate More info: Generating Deploy to remote sites1$ hexo deploy More info: Deployment]]></content>
   </entry>
 </search>
