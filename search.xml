@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Pandas VS Excel——函数填充、计算列]]></title>
+    <url>%2F2019%2F10%2F30%2FPandas-VS-Excel%E2%80%94%E2%80%94%E5%87%BD%E6%95%B0%E5%A1%AB%E5%85%85%E3%80%81%E8%AE%A1%E7%AE%97%E5%88%97%2F</url>
+    <content type="text"><![CDATA[1import pandas as pd 导入数据帧1books = pd.read_excel('C:/Temp/Books.xlsx', index_col='ID') 第一种方法（遍历）books中Price列的第i个元素 = books中ListPrice列的第i个元素 * books中Discount列的第i个元素。适用于部分计算。 12for i in books.index: # 拿到每一行的索引即1-20 books['Price'].at[i] = books['ListPrice'].at[i] * books['Discount'].at[i] 第二种方法（以列为对象，操作列）在pandas中，使用函数填充时，操作对象就是整个列,适用于从头到尾的计算。 1books['Price'] = books['ListPrice']*books['Discount'] 书涨价的情况1books['ListPrice'] = books['ListPrice'] + 2 使用Series中的apply（apply中只写函数名即可，无需调用函数）123def add_2(x): # 定义一个函数加2 return x+2books['ListPrice'] = books['ListPrice'].apply(add_2) # 注意只使用函数名，后面不加括号，加括号表示调用]]></content>
+      <tags>
+        <tag>pandas</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[L1与L2正则化的区别]]></title>
     <url>%2F2019%2F10%2F29%2FL1%E4%B8%8EL2%E6%AD%A3%E5%88%99%E5%8C%96%E7%9A%84%E5%8C%BA%E5%88%AB%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。]]></content>

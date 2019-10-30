@@ -57,18 +57,19 @@
   };
 </script>
 
-  <meta name="description" content="正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。常用的">
+  <meta name="description" content="1import pandas as pd  导入数据帧1books = pd.read_excel(&apos;C:/Temp/Books.xlsx&apos;, index_col=&apos;ID&apos;)">
+<meta name="keywords" content="pandas">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Y&amp;B">
-<meta property="og:url" content="http://xuwentao.com/2019/10/12/L1正则化与L2正则化的区别/index.html">
+<meta property="og:title" content="Pandas VS Excel——函数填充、计算列">
+<meta property="og:url" content="http://xuwentao.com/2019/10/30/Pandas-VS-Excel——函数填充、计算列/index.html">
 <meta property="og:site_name" content="Y&amp;B">
-<meta property="og:description" content="正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。常用的">
+<meta property="og:description" content="1import pandas as pd  导入数据帧1books = pd.read_excel(&apos;C:/Temp/Books.xlsx&apos;, index_col=&apos;ID&apos;)">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-12T14:11:33.793Z">
+<meta property="og:updated_time" content="2019-10-30T05:41:13.417Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Y&amp;B">
-<meta name="twitter:description" content="正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。常用的">
-  <link rel="canonical" href="http://xuwentao.com/2019/10/12/L1正则化与L2正则化的区别/">
+<meta name="twitter:title" content="Pandas VS Excel——函数填充、计算列">
+<meta name="twitter:description" content="1import pandas as pd  导入数据帧1books = pd.read_excel(&apos;C:/Temp/Books.xlsx&apos;, index_col=&apos;ID&apos;)">
+  <link rel="canonical" href="http://xuwentao.com/2019/10/30/Pandas-VS-Excel——函数填充、计算列/">
 
 
 <script id="page-configurations">
@@ -82,7 +83,7 @@
   };
 </script>
 
-  <title> | Y&B</title>
+  <title>Pandas VS Excel——函数填充、计算列 | Y&B</title>
   
 
 
@@ -245,7 +246,7 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/12/L1正则化与L2正则化的区别/">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/30/Pandas-VS-Excel——函数填充、计算列/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="老许头">
@@ -257,7 +258,7 @@
       <meta itemprop="name" content="Y&B">
     </span>
       <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
+        <h1 class="post-title" itemprop="name headline">Pandas VS Excel——函数填充、计算列
 
           
         </h1>
@@ -273,8 +274,12 @@
                 
               
 
-              <time title="创建时间：2019-10-12 22:11:33" itemprop="dateCreated datePublished" datetime="2019-10-12T22:11:33+08:00">2019-10-12</time>
+              <time title="创建时间：2019-10-30 13:37:01 / 修改时间：13:41:13" itemprop="dateCreated datePublished" datetime="2019-10-30T13:37:01+08:00">2019-10-30</time>
             </span>
+          
+            
+
+            
           
 
           
@@ -296,7 +301,7 @@
       
       <span class="post-meta-item-text">Valine：</span>
     
-    <a title="valine" href="/2019/10/12/L1正则化与L2正则化的区别/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/12/L1正则化与L2正则化的区别/" itemprop="commentCount"></span></a>
+    <a title="valine" href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/" itemprop="commentCount"></span></a>
   </span>
   
   
@@ -308,7 +313,7 @@
               
                 <span class="post-meta-item-text">本文字数：</span>
               
-              <span>171</span>
+              <span>603</span>
             </span>
           
             <span class="post-meta-item" title="阅读时长">
@@ -331,7 +336,23 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <p>正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。<br>正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。常用的</p>
+        <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br></pre></td></tr></table></figure>
+
+<h3 id="导入数据帧"><a href="#导入数据帧" class="headerlink" title="导入数据帧"></a>导入数据帧</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">books = pd.read_excel(<span class="string">'C:/Temp/Books.xlsx'</span>, index_col=<span class="string">'ID'</span>)</span><br></pre></td></tr></table></figure>
+
+<a id="more"></a>
+<h3 id="第一种方法（遍历）"><a href="#第一种方法（遍历）" class="headerlink" title="第一种方法（遍历）"></a>第一种方法（遍历）</h3><p>books中Price列的第i个元素 = books中ListPrice列的第i个元素 * books中Discount列的第i个元素。适用于部分计算。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> books.index:  <span class="comment"># 拿到每一行的索引即1-20</span></span><br><span class="line">    books[<span class="string">'Price'</span>].at[i] = books[<span class="string">'ListPrice'</span>].at[i] * books[<span class="string">'Discount'</span>].at[i]</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="第二种方法（以列为对象，操作列）"><a href="#第二种方法（以列为对象，操作列）" class="headerlink" title="第二种方法（以列为对象，操作列）"></a>第二种方法（以列为对象，操作列）</h3><p>在pandas中，使用函数填充时，操作对象就是整个列,适用于从头到尾的计算。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">books[<span class="string">'Price'</span>] = books[<span class="string">'ListPrice'</span>]*books[<span class="string">'Discount'</span>]</span><br></pre></td></tr></table></figure>
+
+<h3 id="书涨价的情况"><a href="#书涨价的情况" class="headerlink" title="书涨价的情况"></a>书涨价的情况</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">books[<span class="string">'ListPrice'</span>] = books[<span class="string">'ListPrice'</span>] + <span class="number">2</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="使用Series中的apply（apply中只写函数名即可，无需调用函数）"><a href="#使用Series中的apply（apply中只写函数名即可，无需调用函数）" class="headerlink" title="使用Series中的apply（apply中只写函数名即可，无需调用函数）"></a>使用Series中的apply（apply中只写函数名即可，无需调用函数）</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">add_2</span><span class="params">(x)</span>:</span>  <span class="comment"># 定义一个函数加2</span></span><br><span class="line">    <span class="keyword">return</span> x+<span class="number">2</span></span><br><span class="line">books[<span class="string">'ListPrice'</span>] = books[<span class="string">'ListPrice'</span>].apply(add_2)  <span class="comment"># 注意只使用函数名，后面不加括号，加括号表示调用</span></span><br></pre></td></tr></table></figure>
+
 
     </div>
 
@@ -365,14 +386,23 @@
       
 
       <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/pandas/" rel="tag"><i class="fa fa-tag"></i> pandas</a>
+            
+          </div>
+        
 
         
 
           <div class="post-nav">
             <div class="post-nav-next post-nav-item">
               
-                <a href="/2019/10/12/神经网络算法代码实现/" rel="next" title="神经网络算法代码实现">
-                  <i class="fa fa-chevron-left"></i> 神经网络算法代码实现
+                <a href="/2019/10/29/L1与L2正则化的区别/" rel="next" title="L1与L2正则化的区别">
+                  <i class="fa fa-chevron-left"></i> L1与L2正则化的区别
                 </a>
               
             </div>
@@ -380,10 +410,6 @@
             <span class="post-nav-divider"></span>
 
             <div class="post-nav-prev post-nav-item">
-              
-                <a href="/2019/10/29/Pandas-VS-Excel/" rel="prev" title="Pandas VS Excel">
-                  Pandas VS Excel <i class="fa fa-chevron-right"></i>
-                </a>
               
             </div>
           </div>
@@ -432,6 +458,8 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#导入数据帧"><span class="nav-number">1.</span> <span class="nav-text">导入数据帧</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#第一种方法（遍历）"><span class="nav-number">2.</span> <span class="nav-text">第一种方法（遍历）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#第二种方法（以列为对象，操作列）"><span class="nav-number">3.</span> <span class="nav-text">第二种方法（以列为对象，操作列）</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#书涨价的情况"><span class="nav-number">4.</span> <span class="nav-text">书涨价的情况</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用Series中的apply（apply中只写函数名即可，无需调用函数）"><span class="nav-number">5.</span> <span class="nav-text">使用Series中的apply（apply中只写函数名即可，无需调用函数）</span></a></li></ol></div>
+        
       </div>
       <!--/noindex-->
 
@@ -449,7 +477,7 @@
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-count">5</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -462,7 +490,7 @@
             <a href="/categories/">
           
         
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">分类</span>
         </a>
       </div>
@@ -475,7 +503,7 @@
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -566,12 +594,12 @@
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">13k</span>
+    <span title="站点总字数">14k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">12 分钟</span>
+    <span title="站点阅读时长">13 分钟</span>
 </div>
 
 <!--
