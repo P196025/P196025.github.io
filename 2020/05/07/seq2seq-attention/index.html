@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","width":300,"display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+<meta name="keywords" content="机器翻译,Seq2Seq,RNN,Attention">
+<meta property="og:type" content="article">
+<meta property="og:title" content="基于Attention机制的Encoder-Decoder框架实现机器翻译">
+<meta property="og:url" content="http://xuwentao.com/2020/05/07/seq2seq-attention/index.html">
+<meta property="og:site_name" content="Y&amp;B">
+<meta property="og:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/image.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_19_1.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_20_1.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_21_1.png">
+<meta property="og:updated_time" content="2020-05-07T10:59:31.637Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="基于Attention机制的Encoder-Decoder框架实现机器翻译">
+<meta name="twitter:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+<meta name="twitter:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/image.png">
+  <link rel="canonical" href="http://xuwentao.com/2020/05/07/seq2seq-attention/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>基于Attention机制的Encoder-Decoder框架实现机器翻译 | Y&B</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+	<a href="https://github/p196025" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Y&B</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/07/seq2seq-attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老许头">
+      <meta itemprop="description" content="在我26岁的一天">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Y&B">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">基于Attention机制的Encoder-Decoder框架实现机器翻译
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-07 18:47:01 / 修改时间：18:59:31" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
+            </span>
+          
+            
+
+            
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/07/seq2seq-attention/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/05/07/seq2seq-attention/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>23k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>21 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h1><hr>
+<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ol>
+<li>多层感知机不擅长或者说不能处理可变长序列<br> 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
+<li>多层感知机不能进行参数共享<br> 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
+</ol>
+<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ol>
+<li>不同时间步内的参数共享</li>
+<li>不需要学习每个位置的规则<a id="more"></a>
+
+</li>
+</ol>
+<h2 id="1-Seq2Seq模型"><a href="#1-Seq2Seq模型" class="headerlink" title="1. Seq2Seq模型"></a>1. Seq2Seq模型</h2><p>&emsp;&emsp;Seq2Seq模型用来解决将可变长的输入序列映射到可变长的输出序列。这在许多场景中都有应用，如语音识别、机器翻译或问答等，其中训练集的输入序列和输出序列的长度通常不相同（虽然它们的长度可能相关）。</p>
+<h3 id="1-1-Encoder-Decoder架构"><a href="#1-1-Encoder-Decoder架构" class="headerlink" title="1.1 Encoder-Decoder架构"></a>1.1 Encoder-Decoder架构</h3><h4 id="1-1-1-架构基本原理及组成"><a href="#1-1-1-架构基本原理及组成" class="headerlink" title="1.1.1 架构基本原理及组成"></a>1.1.1 架构基本原理及组成</h4><p>&emsp;&emsp;用于将可变长度序列映射到另一可变长度序列最简单的RNN架构是Encoder-Decoder架构。其基本思想是：编码器的每个时间步分别输入单词特征向量（采用one-hot编码或Embedding），并输出上下文向量C（通常是最终时间步的隐层状态或其简单函数），通过该向量来表征输入句子的信息。解码器在每个时间步使用上下文向量C，上一时间步输出以及上一时间步的隐层状态为输入进行预测。如下图所示为Encoder-Decoder架构示意图，其中上下文向量通常为固定长度向量。</p>
+<p><img src="/2020/05/07/seq2seq-attention/image.png" alt="png"></p>
+<h4 id="编码器Encoder"><a href="#编码器Encoder" class="headerlink" title="编码器Encoder"></a>编码器Encoder</h4><p>&emsp;&emsp;Encoder本身是一个RNN网络，RNN的单元可以是GRU，也可是LSTM。可以为单向,也可以为双向。<br>对于长度为$T_x$输入序列${x_1, x_2, … x_{T_x}}$, 在时间步$t$, 将单词$x_t$的特征向量和上个时间步的隐藏状态$h_{t-1}$, Encoder的作用是将一个可变长度序列映射为固定大小的上下文向量C，用以表征输入序列的语意概要。<br>其中:<br>时间步$t$的隐层状态为:&emsp;&emsp;&emsp;&emsp;$h_t = f(x_t, h_{t-1})$<br>上下文向量$C$为:&emsp;&emsp;&emsp;&emsp;$C = q(h_1, h_2, h_3, … , h_T)$  </p>
+<h4 id="解码器Decoder"><a href="#解码器Decoder" class="headerlink" title="解码器Decoder"></a>解码器Decoder</h4><p>&emsp;&emsp;Decoder也是一个RNN网络，其工作原理如下：对于输出序列的时间步$t{‘}$, 解码器以上一时间步的隐层状态$h_{t{‘}-1}$以及上下文向量$C$为输入，输出$y_{t{‘}}$的条件概率，即$P(y_{t{‘}}|y_1, y_2, … , y_{t{‘}-1}, C)$。</p>
+<h4 id="训练模型"><a href="#训练模型" class="headerlink" title="训练模型"></a>训练模型</h4><p>&emsp;&emsp;根据极大似然估计，该问题为最优化问题，问题的目标函数为：<br>&emsp;&emsp;$P(y_1, y_2, … , y_{t{‘}-1}|x_1, x_2, …, x_T)$<br>&emsp;&emsp;$= \prod_{t{‘}=1}^{T{‘}}P(y_t|y_1, y_2, … , y_{t{‘}-1}, x_1, x_2, …, x_T)$<br>&emsp;&emsp;$= \prod_{t{‘}=1}^{T{‘}}P(y_t|y_1, y_2, … , y_{t{‘}-1}, C)$<br>&emsp;&emsp;该输出序列的损失函数为：<br>&emsp;&emsp;$-logP(y_1, y_2, … , y_{t{‘}-1}|x_1, x_2, …, x_T)$<br>&emsp;&emsp;$=\sum_{t{‘}=1}^{T{‘}}P(y_t|y_1, y_2, … , y_{t{‘}-1}, C)$</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">import</span> matplotlib <span class="keyword">as</span> mpl</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> sklearn</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> tensorflow <span class="keyword">import</span> keras</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. preprocessing data</span></span><br><span class="line"><span class="comment"># 2. build model</span></span><br><span class="line"><span class="comment"># 2.1 encoder</span></span><br><span class="line"><span class="comment"># 2.2 attention</span></span><br><span class="line"><span class="comment"># 2.3 decoder</span></span><br><span class="line"><span class="comment"># 2.4 loss &amp; optimizer</span></span><br><span class="line"><span class="comment"># 2.5 train</span></span><br><span class="line"><span class="comment"># 3. evaluation</span></span><br><span class="line"><span class="comment"># 3.1 given sentence, return translated results</span></span><br><span class="line"><span class="comment"># 3.2 visualize results(attention)</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">en_spa_file_path = <span class="string">'./data_spa_en/spa.txt'</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> unicodedata</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">unicode_to_ascii</span><span class="params">(s)</span>:</span></span><br><span class="line">    <span class="string">'''西班牙语中的特殊字符是使用UNICODE表示的，需要转换成ASCII码。转换成ASCII后，vocabe_size=128 or 256'''</span></span><br><span class="line">    <span class="keyword">return</span> <span class="string">''</span>.join(c <span class="keyword">for</span> c <span class="keyword">in</span> unicodedata.normalize(<span class="string">'NFD'</span>, s)</span><br><span class="line">                   <span class="keyword">if</span> unicodedata.category(c) != <span class="string">'Mn'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">en_sentence = <span class="string">'Then what?'</span></span><br><span class="line">sp_sentence = <span class="string">'¿Entonces qué?'</span></span><br><span class="line">print(unicode_to_ascii(en_sentence))</span><br><span class="line">print(unicode_to_ascii(sp_sentence))</span><br></pre></td></tr></table></figure>
+
+<pre><code>Then what?
+¿Entonces que?</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> re</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">preprocess_sentence</span><span class="params">(s)</span>:</span></span><br><span class="line">    s = unicode_to_ascii(s.lower().strip())</span><br><span class="line">    <span class="comment"># 标点符号前后加空格</span></span><br><span class="line">    s = re.sub(<span class="string">r"([?.!,¿])"</span>, <span class="string">r" \1 "</span>, s)</span><br><span class="line">    <span class="comment"># 多余的空格变成一个空格</span></span><br><span class="line">    s = re.sub(<span class="string">r'[" "]+'</span>, <span class="string">" "</span>, s)</span><br><span class="line">    <span class="comment"># 除了标点符号和字母外都是空格</span></span><br><span class="line">    s = re.sub(<span class="string">r'[^a-zA-Z?.!,¿]'</span>, <span class="string">" "</span>, s)</span><br><span class="line">    <span class="comment"># 去掉前后空格</span></span><br><span class="line">    s = s.rstrip().strip()</span><br><span class="line">    s = <span class="string">'&lt;start&gt; '</span> + s + <span class="string">' &lt;end&gt;'</span></span><br><span class="line">    <span class="keyword">return</span> s</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">print(preprocess_sentence(en_sentence))</span><br><span class="line">print(preprocess_sentence(sp_sentence))</span><br></pre></td></tr></table></figure>
+
+<pre><code>&lt;start&gt; then what ? &lt;end&gt;
+&lt;start&gt; ¿ entonces que ? &lt;end&gt;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">parse_data</span><span class="params">(filename)</span>:</span></span><br><span class="line">    lines = open(filename, encoding=<span class="string">'UTF-8'</span>).read().strip().split(<span class="string">'\n'</span>)</span><br><span class="line">    sentence_pairs = [line.split(<span class="string">'\t'</span>) <span class="keyword">for</span> line <span class="keyword">in</span> lines]</span><br><span class="line">    preprocessed_sentence_pairs = [(preprocess_sentence(en),</span><br><span class="line">                                    preprocess_sentence(sp))</span><br><span class="line">                                   <span class="keyword">for</span> [en, sp] <span class="keyword">in</span> sentence_pairs]</span><br><span class="line">    <span class="keyword">return</span> zip(*preprocessed_sentence_pairs)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">en_dataset, sp_dataset = parse_data(en_spa_file_path)</span><br><span class="line">print(en_dataset[<span class="number">-1</span>])</span><br><span class="line">print(sp_dataset[<span class="number">-1</span>])</span><br></pre></td></tr></table></figure>
+
+<pre><code>&lt;start&gt; if you want to sound like a native speaker , you must be willing to practice saying the same sentence over and over in the same way that banjo players practice the same phrase over and over until they can play it correctly and at the desired tempo . &lt;end&gt;
+&lt;start&gt; si quieres sonar como un hablante nativo , debes estar dispuesto a practicar diciendo la misma frase una y otra vez de la misma manera en que un musico de banjo practica el mismo fraseo una y otra vez hasta que lo puedan tocar correctamente y en el tiempo esperado . &lt;end&gt;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tokenizer</span><span class="params">(lang)</span>:</span></span><br><span class="line">    lang_tokenizer = keras.preprocessing.text.Tokenizer(num_words=<span class="literal">None</span>,</span><br><span class="line">                                                        filters=<span class="string">''</span>,</span><br><span class="line">                                                        split=<span class="string">' '</span>)</span><br><span class="line">    lang_tokenizer.fit_on_texts(lang)</span><br><span class="line">    tensor = lang_tokenizer.texts_to_sequences(lang)</span><br><span class="line">    tensor = keras.preprocessing.sequence.pad_sequences(tensor, padding=<span class="string">'post'</span>)</span><br><span class="line">    <span class="keyword">return</span> tensor, lang_tokenizer</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">input_tensor, input_tokenizer = tokenizer(sp_dataset[<span class="number">0</span>:<span class="number">30000</span>])</span><br><span class="line">print(input_tensor.shape)</span><br><span class="line">output_tensor, output_tokenizer = tokenizer(en_dataset[<span class="number">0</span>:<span class="number">30000</span>])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">max_length</span><span class="params">(tensor)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> max(len(t) <span class="keyword">for</span> t <span class="keyword">in</span> tensor)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">max_length_input = max_length(input_tensor)</span><br><span class="line">max_length_output = max_length(output_tensor)</span><br><span class="line">print(max_length_input, max_length_output)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(30000, 16)
+16 11</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> sklearn.model_selection <span class="keyword">import</span> train_test_split</span><br><span class="line">input_train, input_eval, output_train, output_eval = train_test_split(</span><br><span class="line">    input_tensor, output_tensor, test_size=<span class="number">0.2</span>)</span><br><span class="line">len(input_train), len(input_eval), len(output_train), len(output_eval)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(24000, 6000, 24000, 6000)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">convert</span><span class="params">(example, tokenizer)</span>:</span></span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> example:</span><br><span class="line">        <span class="keyword">if</span> t != <span class="number">0</span>:</span><br><span class="line">            print(<span class="string">'%d --&gt; %s'</span> % (t, tokenizer.index_word[t]))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">convert(input_train[<span class="number">0</span>], input_tokenizer)</span><br><span class="line">print()</span><br><span class="line">convert(output_train[<span class="number">0</span>], output_tokenizer)</span><br></pre></td></tr></table></figure>
+
+<pre><code>1 --&gt; &lt;start&gt;
+26 --&gt; yo
+160 --&gt; tenia
+239 --&gt; anos
+20 --&gt; en
+3 --&gt; .
+2 --&gt; &lt;end&gt;
+
+1 --&gt; &lt;start&gt;
+4 --&gt; i
+26 --&gt; was
+33 --&gt; in
+3 --&gt; .
+2 --&gt; &lt;end&gt;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_dataset</span><span class="params">(input_tensor, output_tensor, batch_size, epochs, shuffle)</span>:</span></span><br><span class="line">    dataset = tf.data.Dataset.from_tensor_slices((input_tensor, output_tensor))</span><br><span class="line">    <span class="keyword">if</span> shuffle:</span><br><span class="line">        dataset = dataset.shuffle(<span class="number">30000</span>)</span><br><span class="line">    dataset = dataset.repeat(epochs).batch(batch_size, drop_remainder=<span class="literal">True</span>)</span><br><span class="line">    <span class="keyword">return</span> dataset</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">batch_size = <span class="number">64</span></span><br><span class="line">epochs = <span class="number">20</span></span><br><span class="line">train_dataset = make_dataset(input_train, output_train, batch_size, epochs,</span><br><span class="line">                             <span class="literal">True</span>)</span><br><span class="line">eval_dataset = make_dataset(input_eval, output_eval, batch_size, <span class="number">1</span>, <span class="literal">False</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> x, y <span class="keyword">in</span> train_dataset.take(<span class="number">1</span>):</span><br><span class="line">    print(x.shape)</span><br><span class="line">    print(y.shape)</span><br><span class="line">    print(x)</span><br><span class="line">    print(y)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 16)
+(64, 11)
+tf.Tensor(
+[[   1 7824   13 ...    0    0    0]
+ [   1    6   11 ...    0    0    0]
+ [   1    6   14 ...    0    0    0]
+ ...
+ [   1  137  497 ...    0    0    0]
+ [   1   12  597 ...    0    0    0]
+ [   1   16    7 ...    0    0    0]], shape=(64, 16), dtype=int32)
+tf.Tensor(
+[[   1  116  126   13  465    3    2    0    0    0    0]
+ [   1   32 2077   20    7    2    0    0    0    0    0]
+ [   1   32 1779    8   10    7    2    0    0    0    0]
+ [   1    8    5 3258    7    2    0    0    0    0    0]
+ [   1  199  140  657   44    3    2    0    0    0    0]
+ [   1    4   18   85  473    3    2    0    0    0    0]
+ [   1   28  233   33 1853    3    2    0    0    0    0]
+ [   1    4   25 2415   68    3    2    0    0    0    0]
+ [   1   14   42    9   69  134    3    2    0    0    0]
+ [   1   16  262    6    3    2    0    0    0    0    0]
+ [   1   14   11    9  443  159    3    2    0    0    0]
+ [   1   21  165  919    8    3    2    0    0    0    0]
+ [   1    4 1250 1111    3    2    0    0    0    0    0]
+ [   1   56  185   13  201    3    2    0    0    0    0]
+ [   1  992    8    9 4415    3    2    0    0    0    0]
+ [   1    5 1360  596  265    3    2    0    0    0    0]
+ [   1    6   23   35   17    3    2    0    0    0    0]
+ [   1    4  135 1773    3    2    0    0    0    0    0]
+ [   1    5  825    9  578    3    2    0    0    0    0]
+ [   1    4   62  884  376    3    2    0    0    0    0]
+ [   1   30   12  456   31  837    3    2    0    0    0]
+ [   1   46   11  279   15  544    3    2    0    0    0]
+ [   1   71    8   31  168    7    2    0    0    0    0]
+ [   1    4   18  537    4  169   73    3    2    0    0]
+ [   1   25    6 2944   20    7    2    0    0    0    0]
+ [   1    4   29 2329   59   97    3    2    0    0    0]
+ [   1    4   29   66  493    3    2    0    0    0    0]
+ [   1   10   11   69   15   40   89    3    2    0    0]
+ [   1   14   87   12   72  486    3    2    0    0    0]
+ [   1   32   11   13 1108    7    2    0    0    0    0]
+ [   1    6   92  348    3    2    0    0    0    0    0]
+ [   1  441   16   25  149    3    2    0    0    0    0]
+ [   1   22    6   35 1856    7    2    0    0    0    0]
+ [   1    4   43  126   67    3    2    0    0    0    0]
+ [   1    5   26  624   50    3    2    0    0    0    0]
+ [   1    5  905   54   73    3    2    0    0    0    0]
+ [   1   22    6  103   63  383    7    2    0    0    0]
+ [   1   42    6  202  242    7    2    0    0    0    0]
+ [   1   27   11    9  421 2264    3    2    0    0    0]
+ [   1  271    6   35    9  104    7    2    0    0    0]
+ [   1    5    8 1046    3    2    0    0    0    0    0]
+ [   1   24   31  344  438    7    2    0    0    0    0]
+ [   1   32  271    5   47    7    2    0    0    0    0]
+ [   1   60 1206    6    7    2    0    0    0    0    0]
+ [   1    4  472  417    9 1227    3    2    0    0    0]
+ [   1    6   25   12  302   17    3    2    0    0    0]
+ [   1    4   25   12   64  197   10    3    2    0    0]
+ [   1    4   65  105   21 2271    3    2    0    0    0]
+ [   1   16   65  160 4279    3    2    0    0    0    0]
+ [   1   32  478  717    7    2    0    0    0    0    0]
+ [   1  755  496    3    2    0    0    0    0    0    0]
+ [   1    6   24   85  273    3    2    0    0    0    0]
+ [   1    5  872  319    3    2    0    0    0    0    0]
+ [   1    9  728    8    9  728    3    2    0    0    0]
+ [   1    5  411 1522    3    2    0    0    0    0    0]
+ [   1   28   42   10    3    2    0    0    0    0    0]
+ [   1   25    4  125   10   44    7    2    0    0    0]
+ [   1   28   23  649    3    2    0    0    0    0    0]
+ [   1   13  850   92  293    3    2    0    0    0    0]
+ [   1    4   30   12  510   43    3    2    0    0    0]
+ [   1    4   18   34 2363    3    2    0    0    0    0]
+ [   1  379 1020    3    2    0    0    0    0    0    0]
+ [   1   10   11   21  205    3    2    0    0    0    0]
+ [   1   19    8   31  385    3    2    0    0    0    0]], shape=(64, 11), dtype=int32)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 模型的定义部分</span></span><br><span class="line">embedding_units = <span class="number">256</span> <span class="comment"># 词向量.shape (embedding, )</span></span><br><span class="line">units = <span class="number">1024</span>  <span class="comment"># 隐层神经元个数 某时间步隐层状态.shape (units, )</span></span><br><span class="line">input_vocab_size = len(input_tokenizer.word_index) + <span class="number">1</span> <span class="comment"># 词表用于embedding matrix</span></span><br><span class="line">output_vocab_size = len(output_tokenizer.word_index) + <span class="number">1</span> <span class="comment"># 同上</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Encoder</span><span class="params">(keras.Model)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, vocab_size, embedding_units, encoding_units,</span></span></span><br><span class="line"><span class="function"><span class="params">                 batch_size)</span>:</span></span><br><span class="line">        super(Encoder, self).__init__()  <span class="comment"># 调用父类构造函数</span></span><br><span class="line">        self.batch_size = batch_size  <span class="comment"># 创建实例变量，下同</span></span><br><span class="line">        self.encoding_units = encoding_units</span><br><span class="line">        self.embedding = keras.layers.Embedding(vocab_size, embedding_units)</span><br><span class="line">        self.gru = keras.layers.GRU(self.encoding_units,</span><br><span class="line">                                    return_sequences=<span class="literal">True</span>,</span><br><span class="line">                                    return_state=<span class="literal">True</span>,</span><br><span class="line">                                    recurrent_initializer=<span class="string">'glorot_uniform'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, hidden)</span>:</span>  <span class="comment"># hidden是初始化的隐含状态</span></span><br><span class="line">        x = self.embedding(x)</span><br><span class="line">        output, state = self.gru(x, initial_state=hidden)</span><br><span class="line">        <span class="keyword">return</span> output, state</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">initialize_hidden_state</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="string">'''创建一个全是0的隐含状态，传给call函数'''</span></span><br><span class="line">        <span class="keyword">return</span> tf.zeros((self.batch_size, self.encoding_units))</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">encoder = Encoder(input_vocab_size, embedding_units, units, batch_size)</span><br><span class="line">sample_hidden = encoder.initialize_hidden_state()</span><br><span class="line">sample_output, sample_hidden = encoder(x, sample_hidden)</span><br><span class="line"></span><br><span class="line">print(<span class="string">"sample_output_shape"</span>, sample_output.shape)</span><br><span class="line">print(<span class="string">"sample_hidden_shape"</span>, sample_hidden.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>sample_output_shape (64, 16, 1024)
+sample_hidden_shape (64, 1024)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">BahdananAttention</span><span class="params">(keras.Model)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, units)</span>:</span></span><br><span class="line">        super(BahdananAttention, self).__init__()</span><br><span class="line">        self.W1 = keras.layers.Dense(units)</span><br><span class="line">        self.W2 = keras.layers.Dense(units)</span><br><span class="line">        self.V = keras.layers.Dense(<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, decoder_hidden, encoder_outputs)</span>:</span></span><br><span class="line">        <span class="string">"""decoder_hidden:decoder某一时间步的隐层状态，encoder_output:encoder每一时间步的输出"""</span></span><br><span class="line">        <span class="comment"># decoder_hidden.shape：(batch_size, units)</span></span><br><span class="line">        <span class="comment"># encoder_hidden.shape:(batch_size, length, units)</span></span><br><span class="line">        <span class="comment"># 广播机制</span></span><br><span class="line">        <span class="comment"># 1. 后缘维度轴长相等 2. 其中1方长度为1</span></span><br><span class="line">        decoder_hidden_with_time_axis = tf.expand_dims(decoder_hidden, axis=<span class="number">1</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># before:(batch_size, length, units)</span></span><br><span class="line">        <span class="comment"># after:(batch_size, length, 1)</span></span><br><span class="line">        score = self.V(</span><br><span class="line">            tf.nn.tanh(self.W1(encoder_outputs) + self.W2(decoder_hidden_with_time_axis)))</span><br><span class="line">        <span class="comment"># shape:(batch_size, length, 1)</span></span><br><span class="line">        attention_weights = tf.nn.softmax(score, axis=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># context_vector.shape = (batch_size, length, units)</span></span><br><span class="line">        context_vector = attention_weights * encoder_outputs</span><br><span class="line">        <span class="comment"># context_vector = (batch_size, units)</span></span><br><span class="line">        context_vector = tf.reduce_sum(context_vector, axis=<span class="number">1</span>)</span><br><span class="line">        <span class="keyword">return</span> context_vector, attention_weights</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">attention_model = BahdananAttention(units = <span class="number">10</span>)</span><br><span class="line">attention_results, attention_weights = attention_model(sample_hidden,</span><br><span class="line">                                                       sample_output)</span><br><span class="line">print(<span class="string">"attention_results.shape:"</span>, attention_results.shape)</span><br><span class="line">print(<span class="string">"attention_weights.shape:"</span>, attention_weights.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>attention_results.shape: (64, 1024)
+attention_weights.shape: (64, 16, 1)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Decoder</span><span class="params">(keras.Model)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, vocab_size, embedding_units, decoding_units,</span></span></span><br><span class="line"><span class="function"><span class="params">                 batch_size)</span>:</span></span><br><span class="line">        super(Decoder, self).__init__()</span><br><span class="line">        self.batch_size = batch_size</span><br><span class="line">        self.decoding_units = decoding_units</span><br><span class="line">        self.embedding = keras.layers.Embedding(vocab_size, embedding_units)</span><br><span class="line">        self.gru = keras.layers.GRU(self.decoding_units,</span><br><span class="line">                                    return_sequences=<span class="literal">True</span>,</span><br><span class="line">                                    return_state=<span class="literal">True</span>,</span><br><span class="line">                                    recurrent_initializer=<span class="string">'glorot_uniform'</span>)</span><br><span class="line">        self.fc = keras.layers.Dense(vocab_size)</span><br><span class="line">        self.attention = BahdananAttention(self.decoding_units)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, hidden, encoding_outputs)</span>:</span></span><br><span class="line">        <span class="string">'''</span></span><br><span class="line"><span class="string">        x: decoder 当前步的输入</span></span><br><span class="line"><span class="string">        hidden: 上一步的隐层状态</span></span><br><span class="line"><span class="string">        encoding_outputs: 经过注意力向量加权求和后的上下文向量</span></span><br><span class="line"><span class="string">        '''</span></span><br><span class="line">        <span class="comment"># context_vector.shape: (batch_size, units)</span></span><br><span class="line">        context_vector, attention_weights = self.attention(</span><br><span class="line">            hidden, encoding_outputs)</span><br><span class="line">        <span class="comment"># before embedding: x.shape :(batch_size, 1)</span></span><br><span class="line">        <span class="comment"># after embedding: x.shape:  (batch_size, 1, embedding_units )</span></span><br><span class="line"></span><br><span class="line">        x = self.embedding(x)</span><br><span class="line">        combined_x = tf.concat([tf.expand_dims(context_vector, <span class="number">1</span>), x], axis=<span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># output.shape: (batch_size, 1, decoding_units)</span></span><br><span class="line">        <span class="comment"># state.shape:  (batch_size, decoding_units)</span></span><br><span class="line">        output, state = self.gru(combined_x)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># output.shape : (batch_size, decoding_units)</span></span><br><span class="line">        output = tf.reshape(output, (<span class="number">-1</span>, output.shape[<span class="number">2</span>]))</span><br><span class="line"></span><br><span class="line">        <span class="comment"># output.shape: (batch_size, vocab_size)</span></span><br><span class="line">        output = self.fc(output)</span><br><span class="line">        <span class="keyword">return</span> output, state, attention_weights</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">decoder = Decoder(output_vocab_size, embedding_units, units, batch_size)</span><br><span class="line">outputs = decoder(tf.random.uniform((batch_size, <span class="number">1</span>)), sample_hidden,</span><br><span class="line">                  sample_output)</span><br><span class="line">decoder_output, decoder_hidden, decoder_aw = outputs</span><br><span class="line">print(decoder_output.shape)</span><br><span class="line">print(decoder_hidden.shape)</span><br><span class="line">print(decoder_aw.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 4935)
+(64, 1024)
+(64, 16, 1)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">optimizer = keras.optimizers.Adam()</span><br><span class="line"></span><br><span class="line">loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=<span class="literal">True</span>,</span><br><span class="line">                                                         reduction=<span class="string">'none'</span>)</span><br><span class="line"><span class="comment"># 去掉padding项所产生的误差后再进行聚合</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># 单步损失函数</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loss_function</span><span class="params">(real, pred)</span>:</span></span><br><span class="line">    mask = tf.math.logical_not(tf.math.equal(real, <span class="number">0</span>))  <span class="comment"># padding 为0 非padding为1</span></span><br><span class="line">    loss_ = loss_object(real, pred)</span><br><span class="line"></span><br><span class="line">    mask = tf.cast(mask, dtype=loss_.dtype)</span><br><span class="line">    loss_ *= mask</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> tf.reduce_mean(loss_)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 计算多步损失函数，并做梯度下降</span></span><br><span class="line"><span class="meta">@tf.function</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">train_step</span><span class="params">(inp, targ, encoding_hidden)</span>:</span></span><br><span class="line">    loss = <span class="number">0</span></span><br><span class="line">    <span class="keyword">with</span> tf.GradientTape() <span class="keyword">as</span> tape:</span><br><span class="line">        encoding_outputs, encoding_hidden = encoder(inp, encoding_hidden)</span><br><span class="line"></span><br><span class="line">        decoding_hidden = encoding_hidden</span><br><span class="line">        <span class="comment"># eg:&lt;start&gt; I am here &lt;end&gt;</span></span><br><span class="line">        <span class="comment"># 1. &lt;start&gt; -&gt; I</span></span><br><span class="line">        <span class="comment"># 2. I -&gt; am</span></span><br><span class="line">        <span class="comment"># 3. am -&gt; here</span></span><br><span class="line">        <span class="comment"># 4. here -&gt; &lt;end&gt;</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> t <span class="keyword">in</span> range(<span class="number">0</span>, targ.shape[<span class="number">1</span>] - <span class="number">1</span>): <span class="comment"># 通过前一个单词预测后一个单词。</span></span><br><span class="line">            decoding_input = tf.expand_dims(targ[:, t], <span class="number">1</span>)<span class="comment"># 切片之后是一个向量（batch, ），应扩展成（batch_size * 1）的矩阵</span></span><br><span class="line">            predictions, decoding_hidden, _ = decoder(decoding_input,</span><br><span class="line">                                                      decoding_hidden,</span><br><span class="line">                                                      encoding_outputs)</span><br><span class="line">            loss += loss_function(targ[:, t + <span class="number">1</span>], predictions)</span><br><span class="line">    batch_loss = loss / int(targ.shape[<span class="number">0</span>])</span><br><span class="line">    variables = encoder.trainable_variables + decoder.trainable_variables</span><br><span class="line">    gradients = tape.gradient(loss, variables)</span><br><span class="line">    optimizer.apply_gradients(zip(gradients, variables))</span><br><span class="line">    <span class="keyword">return</span> batch_loss</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">epochs = <span class="number">10</span></span><br><span class="line">steps_per_epoch = len(input_tensor) // batch_size</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> epoch <span class="keyword">in</span> range(epochs):</span><br><span class="line">    start = time.time()</span><br><span class="line"></span><br><span class="line">    encoding_hidden = encoder.initialize_hidden_state()</span><br><span class="line">    total_loss = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (batch, (inp, targ)) <span class="keyword">in</span> enumerate(train_dataset.take(steps_per_epoch)):</span><br><span class="line">        <span class="string">'''从训练集中取出steps_per_epoch个batch的数据'''</span></span><br><span class="line">        batch_loss = train_step(inp, targ, encoding_hidden)</span><br><span class="line">        total_loss += batch_loss</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> batch % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">            <span class="string">'''每100个batch打印一次数据：Batch从0索引，Epoch从1索引，batch_loss是平均到每条样本上的loss'''</span></span><br><span class="line">            print(<span class="string">'Epoch &#123;&#125; Batch &#123;&#125; Loss &#123;:.4f&#125;'</span>.format(</span><br><span class="line">                epoch + <span class="number">1</span>, batch, batch_loss.numpy()))</span><br><span class="line">            <span class="string">'''每遍历一个epoch后打印一次信息：其中Loss保留小数点后四位，/steps_per_epoch后为每条样本的平均误差'''</span></span><br><span class="line">    print(<span class="string">'Epoch &#123;&#125; Loss &#123;:.4f&#125;'</span>.format(epoch + <span class="number">1</span>,</span><br><span class="line">                                        total_loss / steps_per_epoch))</span><br><span class="line">    print(<span class="string">'Time take 1 epoch &#123;&#125; sec\n'</span>.format(time.time() - start))</span><br></pre></td></tr></table></figure>
+
+<pre><code>Epoch 1 Batch 0 Loss 0.8035
+Epoch 1 Batch 100 Loss 0.3535
+Epoch 1 Batch 200 Loss 0.3359
+Epoch 1 Batch 300 Loss 0.2851
+Epoch 1 Batch 400 Loss 0.2671
+Epoch 1 Loss 0.3293
+Time take 1 epoch 2116.8650002479553 sec
+
+Epoch 2 Batch 0 Loss 0.2466
+Epoch 2 Batch 100 Loss 0.2326
+Epoch 2 Batch 200 Loss 0.2236
+Epoch 2 Batch 300 Loss 0.2260
+Epoch 2 Batch 400 Loss 0.1522
+Epoch 2 Loss 0.2067
+Time take 1 epoch 2149.2449696063995 sec
+
+Epoch 3 Batch 0 Loss 0.1331
+Epoch 3 Batch 100 Loss 0.1548
+Epoch 3 Batch 200 Loss 0.1314
+Epoch 3 Batch 300 Loss 0.1256
+Epoch 3 Batch 400 Loss 0.0868
+Epoch 3 Loss 0.1272
+Time take 1 epoch 2136.0347578525543 sec
+
+Epoch 4 Batch 0 Loss 0.0693
+Epoch 4 Batch 100 Loss 0.0904
+Epoch 4 Batch 200 Loss 0.0876
+Epoch 4 Batch 300 Loss 0.0791
+Epoch 4 Batch 400 Loss 0.0469
+Epoch 4 Loss 0.0776
+Time take 1 epoch 2133.8691380023956 sec
+
+Epoch 5 Batch 0 Loss 0.0511
+Epoch 5 Batch 100 Loss 0.0523
+Epoch 5 Batch 200 Loss 0.0537
+Epoch 5 Batch 300 Loss 0.0500
+Epoch 5 Batch 400 Loss 0.0347
+Epoch 5 Loss 0.0483
+Time take 1 epoch 2115.8476724624634 sec
+
+Epoch 6 Batch 0 Loss 0.0240
+Epoch 6 Batch 100 Loss 0.0340
+Epoch 6 Batch 200 Loss 0.0424
+Epoch 6 Batch 300 Loss 0.0272
+Epoch 6 Batch 400 Loss 0.0157
+Epoch 6 Loss 0.0319
+Time take 1 epoch 2182.366710424423 sec
+
+Epoch 7 Batch 0 Loss 0.0208
+Epoch 7 Batch 100 Loss 0.0224
+Epoch 7 Batch 200 Loss 0.0275
+Epoch 7 Batch 300 Loss 0.0247
+Epoch 7 Batch 400 Loss 0.0153
+Epoch 7 Loss 0.0224
+Time take 1 epoch 2116.347582578659 sec
+
+Epoch 8 Batch 0 Loss 0.0180
+Epoch 8 Batch 100 Loss 0.0161
+Epoch 8 Batch 200 Loss 0.0209
+Epoch 8 Batch 300 Loss 0.0178
+Epoch 8 Batch 400 Loss 0.0154
+Epoch 8 Loss 0.0170
+Time take 1 epoch 2139.7361178398132 sec
+
+Epoch 9 Batch 0 Loss 0.0099
+Epoch 9 Batch 100 Loss 0.0096
+Epoch 9 Batch 200 Loss 0.0128
+Epoch 9 Batch 300 Loss 0.0173
+Epoch 9 Batch 400 Loss 0.0094
+Epoch 9 Loss 0.0136
+Time take 1 epoch 2131.8980412483215 sec
+
+Epoch 10 Batch 0 Loss 0.0096
+Epoch 10 Batch 100 Loss 0.0076
+Epoch 10 Batch 200 Loss 0.0135
+Epoch 10 Batch 300 Loss 0.0100
+Epoch 10 Batch 400 Loss 0.0089
+Epoch 10 Loss 0.0123
+Time take 1 epoch 2125.301104068756 sec</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">evaluate</span><span class="params">(input_sentence)</span>:</span></span><br><span class="line">    attention_matrix = np.zeros((max_length_output, max_length_input))</span><br><span class="line">    input_sentence = preprocess_sentence(input_sentence)</span><br><span class="line">    inputs = [</span><br><span class="line">        input_tokenizer.word_index[token]</span><br><span class="line">        <span class="keyword">for</span> token <span class="keyword">in</span> input_sentence.split(<span class="string">' '</span>)</span><br><span class="line">    ]</span><br><span class="line">    inputs = keras.preprocessing.sequence.pad_sequences(</span><br><span class="line">        [inputs], maxlen=max_length_input, padding=<span class="string">'post'</span>)</span><br><span class="line">    inputs = tf.convert_to_tensor(inputs)</span><br><span class="line"></span><br><span class="line">    results = <span class="string">' '</span></span><br><span class="line">    <span class="comment"># encoding_hidden = encoder.initialize_hidden_state()</span></span><br><span class="line">    encoding_hidden = tf.zeros((<span class="number">1</span>, units))</span><br><span class="line"></span><br><span class="line">    encoding_outputs, encoding_hidden = encoder(inputs, encoding_hidden)</span><br><span class="line">    decoding_hidden = encoding_hidden</span><br><span class="line"></span><br><span class="line">    <span class="comment"># decoding_Inputs.shape: (1, 1)</span></span><br><span class="line">    decoding_input = tf.expand_dims([output_tokenizer.word_index[<span class="string">'&lt;start&gt;'</span>]],</span><br><span class="line">                                    <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">for</span> t <span class="keyword">in</span> range(max_length_output):</span><br><span class="line">        predictions, decoding_hidden, attention_weights = decoder(</span><br><span class="line">            decoding_input, decoding_hidden, encoding_outputs)</span><br><span class="line">        <span class="comment"># attention_weights.shape: (batch_size, inputs_length, 1) (1, 16, 1)</span></span><br><span class="line">        attention_weights = tf.reshape(attention_weights, (<span class="number">-1</span>, ))</span><br><span class="line">        attention_matrix[t] = attention_weights.numpy()</span><br><span class="line"></span><br><span class="line">        <span class="comment">#  predictions.shape: (batch_size, vocab_size) (1, 4935), 通过下标对第0个元素索引，拿到数组的形状为(4935, )的向量</span></span><br><span class="line">        <span class="comment"># 通过tf.argmax获得元素最大值的索引，其实就是单词的索引</span></span><br><span class="line">        predicted_id = tf.argmax(predictions[<span class="number">0</span>]).numpy()</span><br><span class="line">        results += output_tokenizer.index_word[predicted_id] + <span class="string">" "</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> output_tokenizer.index_word[predicted_id] == <span class="string">'&lt;end&gt;'</span>:</span><br><span class="line">            <span class="keyword">return</span> results, input_sentence, attention_matrix</span><br><span class="line">        decoding_input = tf.expand_dims([predicted_id], <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> results, input_sentence, attention_matrix</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">plot_attention</span><span class="params">(attention_matrix, input_sentence, predicted_sentence)</span>:</span></span><br><span class="line">    fig = plt.figure(figsize=(<span class="number">10</span>, <span class="number">10</span>))</span><br><span class="line">    ax = fig.add_subplot(<span class="number">1</span>, <span class="number">1</span>, <span class="number">1</span>)</span><br><span class="line">    ax.matshow(attention_matrix, cmap=<span class="string">'viridis'</span>)</span><br><span class="line">    font_dict = &#123;<span class="string">'fontsize'</span>: <span class="number">14</span>&#125;</span><br><span class="line">    ax.set_xticklabels([<span class="string">' '</span>] + input_sentence, fontdict=font_dict, rotation=<span class="number">90</span>)</span><br><span class="line">    ax.set_yticklabels([<span class="string">' '</span>] + predicted_sentence, fontdict=font_dict)</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">translate</span><span class="params">(input_sentence)</span>:</span></span><br><span class="line">    results, input_sentence, attention_matrix = evaluate(input_sentence)</span><br><span class="line">    print(<span class="string">"Input: %s"</span> % (input_sentence))</span><br><span class="line">    print(<span class="string">"Predicted translation: %s"</span> % (results))</span><br><span class="line">    <span class="comment"># attention_matrix矩阵中不是所有位置都有元素，为可视化方便，需要注意力矩阵进行切片</span></span><br><span class="line">    attention_matrix = attention_matrix[:len(results.split(<span class="string">' '</span>)), :len(</span><br><span class="line">        input_sentence.split(<span class="string">' '</span>))]</span><br><span class="line">    plot_attention(attention_matrix, input_sentence.split(<span class="string">' '</span>),</span><br><span class="line">                   results.split(<span class="string">' '</span>))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">u'Hace mucho frío aquí.'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: &lt;start&gt; hace mucho frio aqui . &lt;end&gt;
+Predicted translation:  it s very cold here . &lt;end&gt; </code></pre><p><img src="/2020/05/07/seq2seq-attention/output_19_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">u'Esta es mi vida.'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: &lt;start&gt; esta es mi vida . &lt;end&gt;
+Predicted translation:  this is my life . &lt;end&gt; </code></pre><p><img src="/2020/05/07/seq2seq-attention/output_20_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">u'¿Todavía estás en casa?'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: &lt;start&gt; ¿ todavia estas en casa ? &lt;end&gt;
+Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img src="/2020/05/07/seq2seq-attention/output_21_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div>谢谢老板！祝老板越来越大！</div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="老许头 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/alipay.jpg" alt="老许头 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/机器翻译/" rel="tag"><i class="fa fa-tag"></i> 机器翻译</a>
+            
+              <a href="/tags/Seq2Seq/" rel="tag"><i class="fa fa-tag"></i> Seq2Seq</a>
+            
+              <a href="/tags/RNN/" rel="tag"><i class="fa fa-tag"></i> RNN</a>
+            
+              <a href="/tags/Attention/" rel="tag"><i class="fa fa-tag"></i> Attention</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/" rel="next" title="Pandas VS Excel——函数填充、计算列">
+                  <i class="fa fa-chevron-left"></i> Pandas VS Excel——函数填充、计算列
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#循环神经网络-Recurrent-Neural-Networks"><span class="nav-number">1.</span> <span class="nav-text">循环神经网络(Recurrent Neural Networks)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么不是多层感知机-全连接前馈网络-？"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">为什么不是多层感知机(全连接前馈网络)？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么是循环神经网络？"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">为什么是循环神经网络？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Seq2Seq模型"><span class="nav-number">1.1.</span> <span class="nav-text">1. Seq2Seq模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-Encoder-Decoder架构"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 Encoder-Decoder架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-1-架构基本原理及组成"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">1.1.1 架构基本原理及组成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编码器Encoder"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">编码器Encoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解码器Decoder"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">解码器Decoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#训练模型"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">训练模型</span></a></li></ol></li></ol></li></ol></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar.jpg"
+      alt="老许头">
+  <p class="site-author-name" itemprop="name">老许头</p>
+  <div class="site-description" itemprop="description">在我26岁的一天</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/P196025" title="GitHub &rarr; https://github.com/P196025" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://weibo.com/5578942666" title="微  博 &rarr; https://weibo.com/5578942666" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微  博</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:291234254@qq.com" title="QQ邮箱 &rarr; mailto:291234254@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>QQ邮箱</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="/291234254" title="微  信 &rarr; 291234254"><i class="fa fa-fw fa-wechat"></i>微  信</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      导 航
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/370872984" title="https://space.bilibili.com/370872984" rel="noopener" target="_blank">bilibili</a>
+        </li>
+      
+    </ul>
+  </div>
+
+      </div>
+		<div id="music163player">
+		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=3020987120&auto=0&height=430"></iframe>	
+		</div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老许头</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">37k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">34 分钟</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.4.1</div>-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'tpW2iM2vzfyEhQ1HvWUwvCHH-gzGzoHsz',
+    appKey: 'jpljpKR66zCUmVNwtV0OPwS2',
+    placeholder: '快来发表您的意见吧~',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
+  });
+}, window.Valine);
+</script>
+
+</body>
+</html>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/clicklove.js"></script>

@@ -244,6 +244,127 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/07/seq2seq-attention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老许头">
+      <meta itemprop="description" content="在我26岁的一天">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Y&B">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+            
+            <a href="/2020/05/07/seq2seq-attention/" class="post-title-link" itemprop="url">基于Attention机制的Encoder-Decoder框架实现机器翻译</a>
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-07 18:47:01 / 修改时间：18:59:31" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
+            </span>
+          
+            
+
+            
+          
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/07/seq2seq-attention/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/05/07/seq2seq-attention/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>23k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>21 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h1><hr>
+<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ol>
+<li>多层感知机不擅长或者说不能处理可变长序列<br> 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
+<li>多层感知机不能进行参数共享<br> 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
+</ol>
+<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ol>
+<li>不同时间步内的参数共享</li>
+<li>不需要学习每个位置的规则</li></ol>
+          <!--noindex-->
+          
+            <div class="post-button">
+              <a class="btn" href="/2020/05/07/seq2seq-attention/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+          <div class="post-eof"></div>
+        
+      </footer>
+  </article>
+  
+  
+  
+
+    
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/30/Pandas-VS-Excel——函数填充、计算列/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -940,7 +1061,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-count">6</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -966,7 +1087,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1048,7 +1169,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
 
     <footer id="footer" class="footer">
       <div class="footer-inner">
-        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
   <span class="with-love" id="animate">
     <i class="fa fa-user"></i>
   </span>
@@ -1057,12 +1178,12 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">14k</span>
+    <span title="站点总字数">37k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">13 分钟</span>
+    <span title="站点阅读时长">34 分钟</span>
 </div>
 
 <!--
