@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","width":300,"display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="基于attention的seq2seq 去除定长编码瓶颈， 信息无损从Encoder传到Decoder   但是 采用GRU， 计算仍然有瓶颈， 并行度不高（计算时存在相互依赖，不管是Encoder还是Decoder,在处理seq时都是从前到后的处理模式，前面的词没有处理完，后面的词不能进行处理，并行度不高） 只有Encoder和Decoder之间有attention（Encoder和Decod">
+<meta name="keywords" content="机器翻译,Transformer,self attention">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Transformer">
+<meta property="og:url" content="http://xuwentao.com/2020/05/13/transformer/index.html">
+<meta property="og:site_name" content="Y&amp;B">
+<meta property="og:description" content="基于attention的seq2seq 去除定长编码瓶颈， 信息无损从Encoder传到Decoder   但是 采用GRU， 计算仍然有瓶颈， 并行度不高（计算时存在相互依赖，不管是Encoder还是Decoder,在处理seq时都是从前到后的处理模式，前面的词没有处理完，后面的词不能进行处理，并行度不高） 只有Encoder和Decoder之间有attention（Encoder和Decod">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://xuwentao.com/2020/05/13/transformer/output_12_0.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/13/transformer/output_30_1.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/13/transformer/output_42_1.png">
+<meta property="og:updated_time" content="2020-05-13T13:32:02.610Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Transformer">
+<meta name="twitter:description" content="基于attention的seq2seq 去除定长编码瓶颈， 信息无损从Encoder传到Decoder   但是 采用GRU， 计算仍然有瓶颈， 并行度不高（计算时存在相互依赖，不管是Encoder还是Decoder,在处理seq时都是从前到后的处理模式，前面的词没有处理完，后面的词不能进行处理，并行度不高） 只有Encoder和Decoder之间有attention（Encoder和Decod">
+<meta name="twitter:image" content="http://xuwentao.com/2020/05/13/transformer/output_12_0.png">
+  <link rel="canonical" href="http://xuwentao.com/2020/05/13/transformer/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>Transformer | Y&B</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+	<a href="https://github/p196025" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Y&B</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/13/transformer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老许头">
+      <meta itemprop="description" content="在我26岁的一天">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Y&B">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">Transformer
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-13 21:16:12 / 修改时间：21:32:02" itemprop="dateCreated datePublished" datetime="2020-05-13T21:16:12+08:00">2020-05-13</time>
+            </span>
+          
+            
+
+            
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/13/transformer/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/05/13/transformer/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>48k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>44 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <ul>
+<li>基于attention的seq2seq<ul>
+<li>去除定长编码瓶颈， 信息无损从Encoder传到Decoder</li>
+</ul>
+</li>
+<li>但是<ul>
+<li>采用GRU， 计算仍然有瓶颈， 并行度不高（计算时存在相互依赖，不管是Encoder还是Decoder,在处理seq时都是从前到后的处理模式，前面的词没有处理完，后面的词不能进行处理，并行度不高）</li>
+<li>只有Encoder和Decoder之间有attention（Encoder和Decoder之间存在attention, 但是Encoder和Decoder自身不存在attention，这里可以将attention理解为一种无损的信息传递机制，如果Encoder不同时间步之间不存在attention机制，则只能通过GRU或LSTM的隐含状态进行信息传递，但是这种信息传递的机制在序列长度较长时会产生信息损失）</li>
+</ul>
+</li>
+</ul><a id="more"></a>
+<h4 id="能否去掉RNN？"><a href="#能否去掉RNN？" class="headerlink" title="能否去掉RNN？"></a>能否去掉RNN？</h4><p>&emsp;&emsp;能</p>
+<h4 id="能够给输入输出分别加上self-attention"><a href="#能够给输入输出分别加上self-attention" class="headerlink" title="能够给输入输出分别加上self attention?"></a>能够给输入输出分别加上self attention?</h4><p>&emsp;&emsp;能</p>
+<h4 id="Transformer模型"><a href="#Transformer模型" class="headerlink" title="Transformer模型"></a>Transformer模型</h4><p>参考博客：<a href="https://blog.csdn.net/longxinchen_ml/article/details/86533005" target="_blank" rel="noopener">图解Transformer</a>  </p>
+<ul>
+<li>Encoder-Decoder架构</li>
+<li>多层Encoder-Decoder</li>
+<li>位置编码</li>
+<li>多头注意力<ul>
+<li>缩放点积注意力</li>
+</ul>
+</li>
+<li>Add &amp; Norm</li>
+</ul>
+<h4 id="代码实战"><a href="#代码实战" class="headerlink" title="代码实战"></a>代码实战</h4><p>参考视频：<a href="https://www.bilibili.com/video/BV1jT4y1u77b/?p=1&share_source=weixin&share_medium=ipad&bbid=5b5636423820a240986a33a6c07318b4&ts=1589375429" target="_blank" rel="noopener">Tensorflow2.0入门到进阶</a></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow <span class="keyword">as</span> tf</span><br><span class="line"><span class="keyword">import</span> matplotlib <span class="keyword">as</span> mpl</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> sklearn</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> tensorflow <span class="keyword">import</span> keras</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. loads data</span></span><br><span class="line"><span class="comment"># 2. preprocesses data -&gt; dataset</span></span><br><span class="line"><span class="comment"># 3. tools</span></span><br><span class="line"><span class="comment"># 3.1 generates position embedding</span></span><br><span class="line"><span class="comment"># 3.2 create mask (a. padding, b. decoder)</span></span><br><span class="line"><span class="comment"># 3.3 scaled_dot_product_attention</span></span><br><span class="line"><span class="comment"># 4. builds model</span></span><br><span class="line"><span class="comment"># 4.1 MultiheadAttention</span></span><br><span class="line"><span class="comment"># 4.2 EncoderLayer</span></span><br><span class="line"><span class="comment"># 4.3 DecoderLayer</span></span><br><span class="line"><span class="comment"># 4.4 EncoderModel</span></span><br><span class="line"><span class="comment"># 4.5 DecoderModel</span></span><br><span class="line"><span class="comment"># 4.6 Transformer</span></span><br><span class="line"><span class="comment"># 5. optimizer &amp; loss</span></span><br><span class="line"><span class="comment"># 6. train step -&gt;train</span></span><br><span class="line"><span class="comment"># 7. Evaluate and Visualize</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> tensorflow_datasets <span class="keyword">as</span> tfds</span><br><span class="line">examples, info = tfds.load(<span class="string">'ted_hrlr_translate/pt_to_en'</span>,</span><br><span class="line">                           with_info=<span class="literal">True</span>,</span><br><span class="line">                           as_supervised=<span class="literal">True</span>)</span><br><span class="line">train_examples, val_examples = examples[<span class="string">'train'</span>], examples[<span class="string">'validation'</span>]</span><br><span class="line">print(info)</span><br></pre></td></tr></table></figure>
+
+<pre><code>tfds.core.DatasetInfo(
+    name=&apos;ted_hrlr_translate&apos;,
+    version=1.0.0,
+    description=&apos;Data sets derived from TED talk transcripts for comparing similar language pairs
+where one is high resource and the other is low resource.&apos;,
+    homepage=&apos;https://github.com/neulab/word-embeddings-for-nmt&apos;,
+    features=Translation({
+        &apos;en&apos;: Text(shape=(), dtype=tf.string),
+        &apos;pt&apos;: Text(shape=(), dtype=tf.string),
+    }),
+    total_num_examples=54781,
+    splits={
+        &apos;test&apos;: 1803,
+        &apos;train&apos;: 51785,
+        &apos;validation&apos;: 1193,
+    },
+    supervised_keys=(&apos;pt&apos;, &apos;en&apos;),
+    citation=&quot;&quot;&quot;@inproceedings{Ye2018WordEmbeddings,
+      author  = {Ye, Qi and Devendra, Sachan and Matthieu, Felix and Sarguna, Padmanabhan and Graham, Neubig},
+      title   = {When and Why are pre-trained word embeddings useful for Neural Machine Translation},
+      booktitle = {HLT-NAACL},
+      year    = {2018},
+      }&quot;&quot;&quot;,
+    redistribution_info=,
+)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> pt, en <span class="keyword">in</span> train_examples.take(<span class="number">5</span>):</span><br><span class="line">    print(pt.numpy())</span><br><span class="line">    print(en.numpy())</span><br><span class="line">    print()</span><br></pre></td></tr></table></figure>
+
+<pre><code>b&apos;e quando melhoramos a procura , tiramos a \xc3\xbanica vantagem da impress\xc3\xa3o , que \xc3\xa9 a serendipidade .&apos;
+b&apos;and when you improve searchability , you actually take away the one advantage of print , which is serendipity .&apos;
+
+b&apos;mas e se estes fatores fossem ativos ?&apos;
+b&apos;but what if it were active ?&apos;
+
+b&apos;mas eles n\xc3\xa3o tinham a curiosidade de me testar .&apos;
+b&quot;but they did n&apos;t test for curiosity .&quot;
+
+b&apos;e esta rebeldia consciente \xc3\xa9 a raz\xc3\xa3o pela qual eu , como agn\xc3\xb3stica , posso ainda ter f\xc3\xa9 .&apos;
+b&apos;and this conscious defiance is why i , as an agnostic , can still have faith .&apos;
+
+b&quot;`` `` &apos;&apos; podem usar tudo sobre a mesa no meu corpo . &apos;&apos;&quot;
+b&apos;you can use everything on the table on me .&apos;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 从语料中构建词表</span></span><br><span class="line">en_tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus(</span><br><span class="line">    (en.numpy() <span class="keyword">for</span> pt, en <span class="keyword">in</span> train_examples), target_vocab_size=<span class="number">2</span>**<span class="number">13</span>)</span><br><span class="line">pt_tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus(</span><br><span class="line">    (pt.numpy() <span class="keyword">for</span> pt, en <span class="keyword">in</span> train_examples), target_vocab_size=<span class="number">2</span>**<span class="number">13</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">sample_string = <span class="string">"Transformer is awesome."</span></span><br><span class="line"></span><br><span class="line">tokenized_string = en_tokenizer.encode(sample_string)</span><br><span class="line">print(<span class="string">"Tokenized string is &#123;&#125;"</span>.format(tokenized_string))</span><br><span class="line"></span><br><span class="line">origin_string = en_tokenizer.decode(tokenized_string)</span><br><span class="line">print(<span class="string">"The original string is &#123;&#125;"</span>.format(origin_string))</span><br><span class="line"></span><br><span class="line"><span class="keyword">assert</span> origin_string == sample_string</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> token <span class="keyword">in</span> tokenized_string:</span><br><span class="line">    print(<span class="string">'&#123;&#125; --&gt; "&#123;&#125;"'</span>.format(token, en_tokenizer.decode([token])))</span><br></pre></td></tr></table></figure>
+
+<pre><code>Tokenized string is [7915, 1248, 7946, 7194, 13, 2799, 7877]
+The original string is Transformer is awesome.
+7915 --&gt; &quot;T&quot;
+1248 --&gt; &quot;ran&quot;
+7946 --&gt; &quot;s&quot;
+7194 --&gt; &quot;former &quot;
+13 --&gt; &quot;is &quot;
+2799 --&gt; &quot;awesome&quot;
+7877 --&gt; &quot;.&quot;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line">buffer_size = <span class="number">20000</span></span><br><span class="line">batch_size = <span class="number">64</span></span><br><span class="line">max_length = <span class="number">40</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">encode_to_subword</span><span class="params">(pt_sentence, en_sentence)</span>:</span></span><br><span class="line">    <span class="string">'''使用词表将西班牙语和英语的句子对映射为整数列表'''</span></span><br><span class="line">    pt_sequence = [pt_tokenizer.vocab_size] + \</span><br><span class="line">    pt_tokenizer.encode(pt_sentence.numpy()) + \</span><br><span class="line">    [pt_tokenizer.vocab_size + <span class="number">1</span>]</span><br><span class="line">    en_sequence = [en_tokenizer.vocab_size] + \</span><br><span class="line">    en_tokenizer.encode(en_sentence.numpy()) + \</span><br><span class="line">    [en_tokenizer.vocab_size + <span class="number">1</span>]</span><br><span class="line">    <span class="keyword">return</span> pt_sequence, en_sequence</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">filter_by_max_length</span><span class="params">(pt, en)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> tf.logical_and(tf.size(pt) &lt;= max_length, tf.size(en) &lt;= max_length)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">tf_encode_to_subword</span><span class="params">(pt_sentence, en_sentence)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> tf.py_function(encode_to_subword, [pt_sentence, en_sentence],</span><br><span class="line">                          [tf.int64, tf.int64])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">train_dataset = train_examples.map(tf_encode_to_subword)</span><br><span class="line">train_dataset = train_dataset.filter(filter_by_max_length)</span><br><span class="line">train_dataset = train_dataset.shuffle(buffer_size).padded_batch(</span><br><span class="line">    batch_size, padded_shapes=([<span class="number">-1</span>], [<span class="number">-1</span>]))</span><br><span class="line"></span><br><span class="line">valid_dataset = val_examples.map(tf_encode_to_subword)</span><br><span class="line">valid_dataset = valid_dataset.filter(filter_by_max_length)</span><br><span class="line">valid_dataset = valid_dataset.shuffle(buffer_size).padded_batch(</span><br><span class="line">    batch_size, padded_shapes=([<span class="number">-1</span>], [<span class="number">-1</span>]))</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> pt_batch, en_batch <span class="keyword">in</span> valid_dataset.take(<span class="number">5</span>):</span><br><span class="line">    print(pt_batch.shape, en_batch.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 32) (64, 34)
+(64, 40) (64, 35)
+(64, 39) (64, 39)
+(64, 37) (64, 35)
+(64, 40) (64, 39)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># PE(pos, 2i) = sin(pos / 10000^(2i/d_model))</span></span><br><span class="line"><span class="comment"># PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))</span></span><br><span class="line"><span class="comment"># 注意到，偶数的角度是其本身的函数，奇数的角度是小于其本身的偶数的函数</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># pos.shape :   [sentence_length, 1]</span></span><br><span class="line"><span class="comment"># i.shape:         [1, d_model]</span></span><br><span class="line"><span class="comment"># result.shape: [sentence_length, d_model]</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_angles</span><span class="params">(pos, i, d_model)</span>:</span></span><br><span class="line">    angle_rates = <span class="number">1</span> / np.power(</span><br><span class="line">        <span class="number">10000</span>, (<span class="number">2</span> * (i // <span class="number">2</span>)) / np.float32(d_model))  <span class="comment"># i为偶数，则为本身，i为奇数则为比其小1的整数</span></span><br><span class="line">    <span class="keyword">return</span> pos * angle_rates</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_position_embedding</span><span class="params">(sentence_length, d_model)</span>:</span></span><br><span class="line">    angle_rads = get_angles(</span><br><span class="line">        np.arange(sentence_length)[:, np.newaxis],</span><br><span class="line">        np.arange(d_model)[np.newaxis, :], d_model)</span><br><span class="line">    <span class="comment"># sines.shape: [sentence_length, d_model / 2]</span></span><br><span class="line">    <span class="comment"># cosines.shape: [senence_length, d_model / 2]</span></span><br><span class="line">    sines = np.sin(angle_rads[:, <span class="number">0</span>::<span class="number">2</span>])</span><br><span class="line">    cosines = np.cos(angle_rads[:, <span class="number">1</span>::<span class="number">2</span>])</span><br><span class="line"></span><br><span class="line">    <span class="comment"># position_embedding.shape: [sentence_length, d_model]</span></span><br><span class="line">    position_embedding = np.concatenate([sines, cosines], axis=<span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment">#position_embedding.shape: [1, sentence_length, d_model]</span></span><br><span class="line">    position_embedding = position_embedding[np.newaxis, ...]</span><br><span class="line">    <span class="keyword">return</span> tf.cast(position_embedding, dtype=tf.float32)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">position_embedding = get_position_embedding(<span class="number">40</span>, <span class="number">512</span>)</span><br><span class="line">print(position_embedding.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(1, 40, 512)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">plot_position_embedding</span><span class="params">(position_embedding)</span>:</span></span><br><span class="line">    plt.pcolormesh(position_embedding[<span class="number">0</span>], cmap=<span class="string">'RdBu'</span>)</span><br><span class="line">    plt.xlabel(<span class="string">'Depth'</span>)</span><br><span class="line">    plt.xlim((<span class="number">0</span>, <span class="number">512</span>))</span><br><span class="line">    plt.ylabel(<span class="string">'Position'</span>)</span><br><span class="line">    plt.colorbar()</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">plot_position_embedding(position_embedding)</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/13/transformer/output_12_0.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. padding mask, look ahead mask</span></span><br><span class="line"><span class="comment"># 不同于seq2seq的实例中被标记的为0，不被标记的为1，此处标记为1，不被标记为0</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># batch_data.shape: [batch_size,  sequence_length]</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_padding_mask</span><span class="params">(batch_data)</span>:</span></span><br><span class="line">    padding_mask = tf.cast(tf.math.equal(batch_data, <span class="number">0</span>), tf.float32)</span><br><span class="line">    <span class="comment"># [batch, 1, 1, sequence_length]</span></span><br><span class="line">    <span class="keyword">return</span> padding_mask[:, tf.newaxis, tf.newaxis, :]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">x = tf.constant([[<span class="number">7</span>, <span class="number">6</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>], [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">0</span>], [<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">5</span>]])</span><br><span class="line">print(x)</span><br><span class="line">create_padding_mask(x)</span><br></pre></td></tr></table></figure>
+
+<pre><code>tf.Tensor(
+[[7 6 0 0 1]
+ [1 2 3 0 0]
+ [0 0 0 4 5]], shape=(3, 5), dtype=int32)
+
+
+
+
+
+&lt;tf.Tensor: shape=(3, 1, 1, 5), dtype=float32, numpy=
+array([[[[0., 0., 1., 1., 0.]]],
+
+
+       [[[0., 0., 0., 1., 1.]]],
+
+
+       [[[1., 1., 1., 0., 0.]]]], dtype=float32)&gt;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># attention_weights.shape: [3, 3]</span></span><br><span class="line"><span class="comment">#[[1, 0, 0],</span></span><br><span class="line"><span class="comment"># [4, 5, 0],</span></span><br><span class="line"><span class="comment"># [7, 8, 9]]</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_look_ahead_mask</span><span class="params">(size)</span>:</span></span><br><span class="line">    mask = <span class="number">1</span> - tf.linalg.band_part(tf.ones((size, size)), <span class="number">-1</span>, <span class="number">0</span>)</span><br><span class="line">    <span class="keyword">return</span> mask  <span class="comment"># (seq_len, seq_len)</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">create_look_ahead_mask(<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>&lt;tf.Tensor: shape=(3, 3), dtype=float32, numpy=
+array([[0., 1., 1.],
+       [0., 0., 1.],
+       [0., 0., 0.]], dtype=float32)&gt;</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">scaled_dot_product_attention</span><span class="params">(q, k, v, mask)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Args:</span></span><br><span class="line"><span class="string">    - q: shape == (..., seq_len_q, depth)</span></span><br><span class="line"><span class="string">    - k: shape == (..., seq_len_k, depth)</span></span><br><span class="line"><span class="string">    - v: shape == (..., seq_len_v, depth_v)</span></span><br><span class="line"><span class="string">    - seq_len_k == seq_len_v</span></span><br><span class="line"><span class="string">    - mask: shape == (..., seq_len_q, seq_len_k)</span></span><br><span class="line"><span class="string">    Returns:</span></span><br><span class="line"><span class="string">    - output: weighted sum</span></span><br><span class="line"><span class="string">    - attention_weights: weights of attention</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># matmul_qk.shape: (..., seq_len_q, seq_len_k)</span></span><br><span class="line">    matmul_qk = tf.matmul(q, k, transpose_b=<span class="literal">True</span>)</span><br><span class="line">    dk = tf.cast(tf.shape(k)[<span class="number">-1</span>], tf.float32)</span><br><span class="line">    scaled_attention_logits = matmul_qk / tf.math.sqrt(dk)</span><br><span class="line">    <span class="keyword">if</span> mask <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="comment"># 使得经过softmax后值趋近于0</span></span><br><span class="line">        scaled_attention_logits += (mask * <span class="number">-1e9</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># attention_weights.shape: (..., seq_len_q, seq_len_k)</span></span><br><span class="line">    attention_weights = tf.nn.softmax(scaled_attention_logits, axis=<span class="number">-1</span>)</span><br><span class="line">    <span class="comment"># output.shape: (..., seq_len_q, depth_v)</span></span><br><span class="line">    output = tf.matmul(attention_weights, v)</span><br><span class="line">    <span class="keyword">return</span> output, attention_weights</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">print_scaled_dot_product_attention</span><span class="params">(q, k, v)</span>:</span></span><br><span class="line">    temp_out, temp_att = scaled_dot_product_attention(q, k, v, <span class="literal">None</span>)</span><br><span class="line">    print(<span class="string">"Attention weights are:"</span>)</span><br><span class="line">    print(temp_att)</span><br><span class="line">    print(<span class="string">"Output is:"</span>)</span><br><span class="line">    print(temp_out)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">temp_k = tf.constant([[<span class="number">10</span>, <span class="number">0</span>, <span class="number">0</span>], [<span class="number">0</span>, <span class="number">10</span>, <span class="number">0</span>], [<span class="number">0</span>, <span class="number">0</span>, <span class="number">10</span>], [<span class="number">0</span>, <span class="number">0</span>, <span class="number">10</span>]],</span><br><span class="line">                     dtype=tf.float32)  <span class="comment"># (4, 3)</span></span><br><span class="line">temp_v = tf.constant([[<span class="number">1</span>, <span class="number">0</span>], [<span class="number">10</span>, <span class="number">0</span>], [<span class="number">100</span>, <span class="number">5</span>], [<span class="number">1000</span>, <span class="number">6</span>]],</span><br><span class="line">                     dtype=tf.float32)  <span class="comment"># (4, 2)</span></span><br><span class="line">temp_q1 = tf.constant([[<span class="number">0</span>, <span class="number">10</span>, <span class="number">0</span>]], dtype=tf.float32)  <span class="comment"># （1, 3）</span></span><br><span class="line">np.set_printoptions(suppress=<span class="literal">True</span>)</span><br><span class="line">print_scaled_dot_product_attention(temp_q1, temp_k, temp_v)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Attention weights are:
+tf.Tensor([[0. 1. 0. 0.]], shape=(1, 4), dtype=float32)
+Output is:
+tf.Tensor([[10.  0.]], shape=(1, 2), dtype=float32)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">temp_q2 = tf.constant([[<span class="number">0</span>, <span class="number">0</span>, <span class="number">10</span>]], dtype=tf.float32)  <span class="comment"># (1, 3)</span></span><br><span class="line">print_scaled_dot_product_attention(temp_q2, temp_k, temp_v)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Attention weights are:
+tf.Tensor([[0.  0.  0.5 0.5]], shape=(1, 4), dtype=float32)
+Output is:
+tf.Tensor([[550.    5.5]], shape=(1, 2), dtype=float32)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">temp_q3 = tf.constant([[<span class="number">10</span>, <span class="number">10</span>, <span class="number">0</span>]], dtype=tf.float32)</span><br><span class="line">print_scaled_dot_product_attention(temp_q3, temp_k, temp_v)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Attention weights are:
+tf.Tensor([[0.5 0.5 0.  0. ]], shape=(1, 4), dtype=float32)
+Output is:
+tf.Tensor([[5.5 0. ]], shape=(1, 2), dtype=float32)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">temp_q4 = tf.constant([[<span class="number">0</span>, <span class="number">10</span>, <span class="number">0</span>], [<span class="number">0</span>, <span class="number">0</span>, <span class="number">10</span>], [<span class="number">10</span>, <span class="number">10</span>, <span class="number">0</span>]],</span><br><span class="line">                      dtype=tf.float32)  <span class="comment"># (3, 3)</span></span><br><span class="line">print_scaled_dot_product_attention(temp_q4, temp_k, temp_v)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Attention weights are:
+tf.Tensor(
+[[0.  1.  0.  0. ]
+ [0.  0.  0.5 0.5]
+ [0.5 0.5 0.  0. ]], shape=(3, 4), dtype=float32)
+Output is:
+tf.Tensor(
+[[ 10.    0. ]
+ [550.    5.5]
+ [  5.5   0. ]], shape=(3, 2), dtype=float32)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MultiHeadAttention</span><span class="params">(keras.layers.Layer)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    理论上：</span></span><br><span class="line"><span class="string">    x -&gt; Wq0 -&gt; q0</span></span><br><span class="line"><span class="string">    x -&gt; Wk0 -&gt; k0</span></span><br><span class="line"><span class="string">    x -&gt; Wv0 -&gt; v0</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    不同场景下q, k, v不一定是相同的：</span></span><br><span class="line"><span class="string">    - 对于encoder或decoder中的self-attention而言，q, k, v相同，都是词向量或下层encoder或decoder的输出</span></span><br><span class="line"><span class="string">    - 而对于encoder-decoder之间的attention而言，k, v相同，但是q不一定相同。</span></span><br><span class="line"><span class="string">    故实战中：</span></span><br><span class="line"><span class="string">    q -&gt; Wq0 -&gt; q0</span></span><br><span class="line"><span class="string">    k -&gt; Wk0 -&gt; k0</span></span><br><span class="line"><span class="string">    v -&gt; Wv0 -&gt; v0</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    实战中技巧：</span></span><br><span class="line"><span class="string">    为实现多头注意力机制，需要使用q同Wq0, Wq1, ... 分别相乘得到q0, q1, ... </span></span><br><span class="line"><span class="string">    k, v也类似，然后做缩放点积注意力，进行拼接送往feed-forword</span></span><br><span class="line"><span class="string">    实战中使用q 与一个大的Wq做矩阵乘法，然后分割，做后续工作。原理为分块矩阵的乘法。k, v类似。</span></span><br><span class="line"><span class="string">    优点：运算更为密集，代码更为简洁</span></span><br><span class="line"><span class="string">    q -&gt; Wq -&gt; Q -&gt; split -&gt;q0, q1, q2 ...</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, d_model, num_heads)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        d_model: 模型维度， d_model = num_heads * depth(q或k或v的长度)</span></span><br><span class="line"><span class="string">        num_heads: 多头注意力的头数</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        super(MultiHeadAttention, self).__init__()</span><br><span class="line">        self.num_heads = num_heads</span><br><span class="line">        self.d_model = d_model</span><br><span class="line">        <span class="keyword">assert</span> self.d_model % self.num_heads == <span class="number">0</span></span><br><span class="line">        self.depth = self.d_model // self.num_heads</span><br><span class="line">        self.WQ = keras.layers.Dense(self.d_model)</span><br><span class="line">        self.WK = keras.layers.Dense(self.d_model)</span><br><span class="line">        self.WV = keras.layers.Dense(self.d_model)</span><br><span class="line"></span><br><span class="line">        self.dense = keras.layers.Dense(self.d_model)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">split_heads</span><span class="params">(self, x, batch_size)</span>:</span></span><br><span class="line">        <span class="comment"># x.shape: (batch, seq_len, d_model) d_model = num_heads * depth</span></span><br><span class="line">        <span class="comment"># x -&gt; (batch_size, num_heads, seq_len, depth)</span></span><br><span class="line">        x = tf.reshape(x, (batch_size, <span class="number">-1</span>, self.num_heads, self.depth))</span><br><span class="line">        <span class="keyword">return</span> tf.transpose(x, perm=[<span class="number">0</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">3</span>])</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, q, k, v, mask)</span>:</span></span><br><span class="line">        batch_size = tf.shape(q)[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">        q = self.WQ(q)  <span class="comment"># q.shape: (batch_size, seq_len_q, d_model)</span></span><br><span class="line">        k = self.WK(k)  <span class="comment"># k.shape: (batch_size, seq_len_k, d_model)</span></span><br><span class="line">        v = self.WV(v)  <span class="comment"># v.shape: (batch_size, seq_len_v, d_model)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># q.shape: (batch_size, num_heads, seq_len_q, depth)</span></span><br><span class="line">        q = self.split_heads(q, batch_size)</span><br><span class="line">        <span class="comment"># k.shape: (batch_size, num_heads, seq_len_k, depth)</span></span><br><span class="line">        k = self.split_heads(k, batch_size)</span><br><span class="line">        <span class="comment"># v.shape: (batch_size, num_heads, seq_len_v, depth)</span></span><br><span class="line">        v = self.split_heads(v, batch_size)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># scaled_attention_outputs.shape: (batch_size, num_heads, seq_len_q, depth)</span></span><br><span class="line">        <span class="comment"># attention_weights.shape: (batch_size, num_heads, seq_len_q, seq_len_k)</span></span><br><span class="line">        scaled_attention_outputs, attention_weights = scaled_dot_product_attention(</span><br><span class="line">            q, k, v, mask)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># scaled_attenttion_outputs.shape: (batch_size, seq_len_q, num_heads, depth)</span></span><br><span class="line">        scaled_attention_outputs = tf.transpose(scaled_attention_outputs,</span><br><span class="line">                                                perm=[<span class="number">0</span>, <span class="number">2</span>, <span class="number">1</span>, <span class="number">3</span>])</span><br><span class="line">        <span class="comment"># concat_attention.shape: (batch_size, seq_len_q, d_model)</span></span><br><span class="line">        concat_attention = tf.reshape(scaled_attention_outputs, (</span><br><span class="line">            batch_size,</span><br><span class="line">            <span class="number">-1</span>,</span><br><span class="line">            self.d_model,</span><br><span class="line">        ))</span><br><span class="line">        <span class="comment"># output.shape: (batch_size, seq_len_q, d_model)</span></span><br><span class="line">        output = self.dense(concat_attention)</span><br><span class="line">        <span class="keyword">return</span> output, attention_weights</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">temp_mha = MultiHeadAttention(d_model=<span class="number">512</span>, num_heads=<span class="number">8</span>)</span><br><span class="line">y = tf.random.uniform((<span class="number">1</span>, <span class="number">60</span>, <span class="number">256</span>))  <span class="comment"># (batch_size, seq_len_q, dim)</span></span><br><span class="line">output, attn = temp_mha(y, y, y, mask=<span class="literal">None</span>)</span><br><span class="line">print(output.shape)</span><br><span class="line">print(attn.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(1, 60, 512)
+(1, 8, 60, 60)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">feed_forword_network</span><span class="params">(d_model, dff)</span>:</span></span><br><span class="line">    <span class="comment"># dff: dim of feed forword network</span></span><br><span class="line">    <span class="keyword">return</span> keras.Sequential([</span><br><span class="line">        keras.layers.Dense(dff, activation=<span class="string">'relu'</span>),</span><br><span class="line">        keras.layers.Dense(d_model)</span><br><span class="line">    ])</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sample_ffn = feed_forword_network(<span class="number">512</span>, <span class="number">2048</span>)</span><br><span class="line">sample_ffn(tf.random.uniform((<span class="number">64</span>, <span class="number">50</span>, <span class="number">512</span>))).shape</span><br></pre></td></tr></table></figure>
+
+<pre><code>TensorShape([64, 50, 512])</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EncoderLayer</span><span class="params">(keras.layers.Layer)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    x -&gt; self attention -&gt; add &amp; normalize &amp; dropout -&gt; out1</span></span><br><span class="line"><span class="string">    out1 -&gt; ffn -&gt;add &amp; normalize &amp; dropout -&gt; out2</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, d_model, num_heads, dff, rate=<span class="number">0.1</span>)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        - d_model: self-attention 和 feed_forword_network使用</span></span><br><span class="line"><span class="string">        - num_heads: self-attention使用</span></span><br><span class="line"><span class="string">        - dff: feed_forword_network使用</span></span><br><span class="line"><span class="string">        - rate: 默认值0.1， dropout使用</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        super(EncoderLayer, self).__init__()</span><br><span class="line">        self.mha = MultiHeadAttention(d_model, num_heads)</span><br><span class="line">        self.ffn = feed_forword_network(d_model, dff)</span><br><span class="line"></span><br><span class="line">        self.layer_norm1 = keras.layers.LayerNormalization(epsilon=<span class="number">1e-6</span>)</span><br><span class="line">        self.layer_norm2 = keras.layers.LayerNormalization(epsilon=<span class="number">1e-6</span>)</span><br><span class="line"></span><br><span class="line">        self.dropout1 = keras.layers.Dropout(rate)</span><br><span class="line">        self.dropout2 = keras.layers.Dropout(rate)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, training, encoder_padding_mask)</span>:</span></span><br><span class="line">        <span class="comment"># x.shape:                  (batch_size, seq_len, dim=d_model) 其中dim可能是embedding的维度，也可能是上一编码器的输出维度的最后一维</span></span><br><span class="line">        <span class="comment"># attn_output.shape: (batch_size, seq_len, d_model)</span></span><br><span class="line">        <span class="comment"># out1.shape:             (batch_size, seq_len, d_model)</span></span><br><span class="line">        attn_output, _ = self.mha(x, x, x, encoder_padding_mask)</span><br><span class="line">        attn_output = self.dropout1(attn_output, training=training)</span><br><span class="line">        out1 = self.layer_norm1(x + attn_output)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># ffn_output.shape: (batch_size, seq_len, d_model),与out1相同，故可以做加法</span></span><br><span class="line">        ffn_output = self.ffn(out1)</span><br><span class="line">        ffn_output = self.dropout2(ffn_output, training)</span><br><span class="line">        out2 = self.layer_norm2(out1 + ffn_output)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> out2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="comment"># (d_model, num_heads, dff)</span></span><br><span class="line">sample_encoder_layer = EncoderLayer(<span class="number">512</span>, <span class="number">8</span>, <span class="number">2048</span>)</span><br><span class="line"><span class="comment"># (batch_size, seq_len, embedding_dim)， embedding_dim一定要与d_model相同，因为上一层的输出要做下一层的输入</span></span><br><span class="line">sample_input = tf.random.uniform((<span class="number">64</span>, <span class="number">50</span>, <span class="number">512</span>))</span><br><span class="line">sample_output = sample_encoder_layer(sample_input, <span class="literal">False</span>, <span class="literal">None</span>)</span><br><span class="line">print(sample_output.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 50, 512)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DecoderLayer</span><span class="params">(keras.layers.Layer)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    x -&gt; self attention -&gt; add &amp; normlize &amp; dropout -&gt; out1</span></span><br><span class="line"><span class="string">    out1, encoding_outputs -&gt; attention -&gt; add &amp; normalize &amp; dropout -&gt; out2</span></span><br><span class="line"><span class="string">    out2 -&gt; ffn -&gt; add &amp; normalize &amp; dropout -&gt; out3</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, d_model, num_heads, dff, rate=<span class="number">0.1</span>)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        - d_model: DecoderLayer输出的最后一维的长度</span></span><br><span class="line"><span class="string">        - num_heads: 头数</span></span><br><span class="line"><span class="string">        - dff: dim of feed_forword_network</span></span><br><span class="line"><span class="string">        - rate=0.1: the frequence of dropout during training time.</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        super(DecoderLayer, self).__init__()</span><br><span class="line">        self.mha1 = MultiHeadAttention(d_model, num_heads)</span><br><span class="line">        self.mha2 = MultiHeadAttention(d_model, num_heads)</span><br><span class="line"></span><br><span class="line">        self.ffn = feed_forword_network(d_model, dff)</span><br><span class="line"></span><br><span class="line">        self.layer_norm1 = keras.layers.LayerNormalization(epsilon=<span class="number">1e-6</span>)</span><br><span class="line">        self.layer_norm2 = keras.layers.LayerNormalization(epsilon=<span class="number">1e-6</span>)</span><br><span class="line">        self.layer_norm3 = keras.layers.LayerNormalization(epsilon=<span class="number">1e-6</span>)</span><br><span class="line"></span><br><span class="line">        self.dropout1 = keras.layers.Dropout(rate)</span><br><span class="line">        self.dropout2 = keras.layers.Dropout(rate)</span><br><span class="line">        self.dropout3 = keras.layers.Dropout(rate)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, encoding_outputs, training, decoder_mask,</span></span></span><br><span class="line"><span class="function"><span class="params">             encoder_decoder_padding_mask)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        - x: input</span></span><br><span class="line"><span class="string">        - encoding_output: </span></span><br><span class="line"><span class="string">        - training:</span></span><br><span class="line"><span class="string">        - decoder_mask: 由look_ahead_mask和decoder_padding_mask取或得到的，意为</span></span><br><span class="line"><span class="string">                        对decoder的输入中的每一个单词来说，不应该注意到其后面的单词</span></span><br><span class="line"><span class="string">                        也不能注意到其前面的padding的单词</span></span><br><span class="line"><span class="string">        - encoder_decoder_padding_mask: 对于decoder中的某一隐含状态而言，不用注意到</span></span><br><span class="line"><span class="string">                                        encoder的输入的padding的部分。</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, target_seq_len, d_model)</span></span><br><span class="line">        <span class="comment"># encoding_outputs.shape: (batch_size, input_seq_len, d_model)</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># attn1, out1.shape: (batch_size, target_seq_len, d_model)</span></span><br><span class="line">        attn1, attn_weights1 = self.mha1(x, x, x, decoder_mask)</span><br><span class="line">        attn1 = self.dropout1(attn1, training=training)</span><br><span class="line">        out1 = self.layer_norm1(attn1 + x)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># attn2, out2.shape: (batch_size, target_seq_len, d_model)</span></span><br><span class="line">        attn2, attn_weights2 = self.mha2(out1, encoding_outputs,</span><br><span class="line">                                         encoding_outputs,</span><br><span class="line">                                         encoder_decoder_padding_mask)</span><br><span class="line">        attn2 = self.dropout2(attn2, training=training)</span><br><span class="line">        out2 = self.layer_norm2(attn2 + x)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># attn3, out3.shape: (batch_size, target_seq_len, d_model)</span></span><br><span class="line">        ffn_output = self.ffn(out2)</span><br><span class="line">        ffn_output = self.dropout3(ffn_output, training=training)</span><br><span class="line">        out3 = self.layer_norm3(ffn_output + out2)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> out3, attn_weights1, attn_weights2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sample_decoder_layer = DecoderLayer(<span class="number">512</span>, <span class="number">8</span>, <span class="number">2048</span>)</span><br><span class="line">sample_decoder_input = tf.random.uniform((<span class="number">64</span>, <span class="number">60</span>, <span class="number">512</span>))</span><br><span class="line">sample_decoder_output, sample_decoder_attn_weights1, sample_decoder_attn_weights2 = sample_decoder_layer(</span><br><span class="line">    sample_decoder_input, sample_output, <span class="literal">False</span>, <span class="literal">None</span>, <span class="literal">None</span>)</span><br><span class="line">print(sample_decoder_output.shape)</span><br><span class="line">print(sample_decoder_attn_weights1.shape)</span><br><span class="line">print(sample_decoder_attn_weights2.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 60, 512)
+(64, 8, 60, 60)
+(64, 8, 60, 50)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">EncoderModel</span><span class="params">(keras.layers.Layer)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_layers,</span></span></span><br><span class="line"><span class="function"><span class="params">                 input_vocab_size,</span></span></span><br><span class="line"><span class="function"><span class="params">                 max_length,</span></span></span><br><span class="line"><span class="function"><span class="params">                 d_model,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_heads,</span></span></span><br><span class="line"><span class="function"><span class="params">                 dff,</span></span></span><br><span class="line"><span class="function"><span class="params">                 rate=<span class="number">0.1</span>)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        num_layers: EncoderModel中EncoderLayer的层数</span></span><br><span class="line"><span class="string">        input_vocab_size: 做词嵌入的embedding层使用，为方便底层输出作为高层输入,embedding_dim与</span></span><br><span class="line"><span class="string">                          d_model相同。</span></span><br><span class="line"><span class="string">        max_length: get_position_embedding使用</span></span><br><span class="line"><span class="string">        d_model: EncoderLayer层输出的最后轴的长度，或者说每个单词经过多头注意力计算后的长度</span></span><br><span class="line"><span class="string">        num_heads: 多头数</span></span><br><span class="line"><span class="string">        dff: dim of feed forword network</span></span><br><span class="line"><span class="string">        rate=0.1: the rate of dropout</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        super(EncoderModel, self).__init__()</span><br><span class="line">        self.d_model = d_model</span><br><span class="line">        self.num_layers = num_layers</span><br><span class="line">        self.max_length = max_length</span><br><span class="line"></span><br><span class="line">        self.embedding = keras.layers.Embedding(input_vocab_size, d_model)</span><br><span class="line">        self.position_embedding = get_position_embedding(</span><br><span class="line">            max_length, self.d_model)</span><br><span class="line">        self.dropout = keras.layers.Dropout(rate)</span><br><span class="line">        self.encoder_layers = [</span><br><span class="line">            EncoderLayer(d_model, num_heads, dff, rate)</span><br><span class="line">            <span class="keyword">for</span> _ <span class="keyword">in</span> range(self.num_layers)</span><br><span class="line">        ]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, training, encoder_padding_mask)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        x:</span></span><br><span class="line"><span class="string">        training: dropout使用</span></span><br><span class="line"><span class="string">        mask: </span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, input_seq_len)</span></span><br><span class="line">        input_seq_len = tf.shape(x)[<span class="number">1</span>]</span><br><span class="line">        tf.debugging.assert_less_equal(</span><br><span class="line">            input_seq_len, self.max_length,</span><br><span class="line">            <span class="string">"input_seq_len should be less or equal to self.max_length"</span>)</span><br><span class="line">        <span class="comment"># x.shape: (batch_size, input_seq_len, d_model)</span></span><br><span class="line">        x = self.embedding(x)</span><br><span class="line">        <span class="comment"># 缩放的原因：x经过embedding初始化后，是从0-1之间的均匀分布中取到的，经过缩放后x的范围变为</span></span><br><span class="line">        <span class="comment"># （0， d_model）与position_embedding相加后，x本身作用会相对来说大一些</span></span><br><span class="line">        x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))</span><br><span class="line">        <span class="comment"># 后缘维度轴长相等即可满足broadcast机制， 会广播到每句英文句子中</span></span><br><span class="line">        x += self.position_embedding[:, :input_seq_len, :]</span><br><span class="line"></span><br><span class="line">        x = self.dropout(x, training=training)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(self.num_layers):</span><br><span class="line">            x = self.encoder_layers[i](x, training, encoder_padding_mask)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, input_seq_len, d_model)</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> x</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sample_encoder_model = EncoderModel(<span class="number">2</span>, <span class="number">8500</span>, max_length, <span class="number">512</span>, <span class="number">8</span>, <span class="number">2048</span>)</span><br><span class="line">sample_encoder_model_input = tf.random.uniform((<span class="number">64</span>, <span class="number">37</span>))</span><br><span class="line">sample_encoder_model_output = sample_encoder_model(sample_encoder_model_input,</span><br><span class="line">                                                   <span class="literal">False</span>,</span><br><span class="line">                                                   encoder_padding_mask=<span class="literal">None</span>)</span><br><span class="line">print(sample_encoder_model_output.shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 37, 512)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">DecoderModel</span><span class="params">(keras.layers.Layer)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_layers,</span></span></span><br><span class="line"><span class="function"><span class="params">                 target_vocab_size,</span></span></span><br><span class="line"><span class="function"><span class="params">                 max_length,</span></span></span><br><span class="line"><span class="function"><span class="params">                 d_model,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_heads,</span></span></span><br><span class="line"><span class="function"><span class="params">                 dff,</span></span></span><br><span class="line"><span class="function"><span class="params">                 rate=<span class="number">0.1</span>)</span>:</span></span><br><span class="line">        super(DecoderModel, self).__init__()</span><br><span class="line">        self.num_layers = num_layers</span><br><span class="line">        self.max_length = max_length</span><br><span class="line">        self.d_model = d_model</span><br><span class="line"></span><br><span class="line">        self.embedding = keras.layers.Embedding(target_vocab_size,</span><br><span class="line">                                                self.d_model)</span><br><span class="line">        self.position_embedding = get_position_embedding(</span><br><span class="line">            self.max_length, self.d_model)</span><br><span class="line"></span><br><span class="line">        self.dropout = keras.layers.Dropout(rate)</span><br><span class="line">        self.decoder_layers = [</span><br><span class="line">            DecoderLayer(d_model, num_heads, dff, rate)</span><br><span class="line">            <span class="keyword">for</span> _ <span class="keyword">in</span> range(self.num_layers)</span><br><span class="line">        ]</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, x, encoding_outputs, training, decoder_mask,</span></span></span><br><span class="line"><span class="function"><span class="params">             encoder_decoder_padding_mask)</span>:</span></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, output_seq_len, d_model)</span></span><br><span class="line">        output_seq_len = tf.shape(x)[<span class="number">1</span>]</span><br><span class="line">        tf.debugging.assert_less_equal(</span><br><span class="line">            output_seq_len, self.max_length,</span><br><span class="line">            <span class="string">"output_seq_len should be less or equal to self.max_length"</span>)</span><br><span class="line"></span><br><span class="line">        attention_weights = &#123;&#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, output_seq_len, d_model)</span></span><br><span class="line">        x = self.embedding(x)</span><br><span class="line">        x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))</span><br><span class="line">        x += self.position_embedding[:, :output_seq_len, :]</span><br><span class="line"></span><br><span class="line">        x = self.dropout(x, training=training)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> i <span class="keyword">in</span> range(self.num_layers):</span><br><span class="line">            x, attn1, attn2 = self.decoder_layers[i](</span><br><span class="line">                x, encoding_outputs, training, decoder_mask,</span><br><span class="line">                encoder_decoder_padding_mask)</span><br><span class="line">            attention_weights[<span class="string">'decoder_layer&#123;&#125;_att1'</span>.format(i + <span class="number">1</span>)] = attn1</span><br><span class="line">            attention_weights[<span class="string">'decoder_layer&#123;&#125;_att2'</span>.format(i + <span class="number">1</span>)] = attn2</span><br><span class="line"></span><br><span class="line">        <span class="comment"># x.shape: (batch_size, output_seq_len, d_model)</span></span><br><span class="line">        <span class="keyword">return</span> x, attention_weights</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sample_decoder_model = DecoderModel(<span class="number">2</span>, <span class="number">80000</span>, max_length, <span class="number">512</span>, <span class="number">8</span>, <span class="number">2048</span>)</span><br><span class="line">sample_decoder_model_input = tf.random.uniform((<span class="number">64</span>, <span class="number">35</span>))</span><br><span class="line">sample_decoder_model_output, sample_decoder_model_att = sample_decoder_model(</span><br><span class="line">    sample_decoder_model_input,</span><br><span class="line">    sample_encoder_model_output,</span><br><span class="line">    training=<span class="literal">False</span>,</span><br><span class="line">    decoder_mask=<span class="literal">None</span>,</span><br><span class="line">    encoder_decoder_padding_mask=<span class="literal">None</span>)</span><br><span class="line"></span><br><span class="line">print(sample_decoder_model_output.shape)</span><br><span class="line"><span class="keyword">for</span> key <span class="keyword">in</span> sample_decoder_model_att:</span><br><span class="line">    print(key, sample_decoder_model_att[key].shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 35, 512)
+decoder_layer1_att1 (64, 8, 35, 35)
+decoder_layer1_att2 (64, 8, 35, 37)
+decoder_layer2_att1 (64, 8, 35, 35)
+decoder_layer2_att2 (64, 8, 35, 37)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Transformer</span><span class="params">(keras.Model)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_layers,</span></span></span><br><span class="line"><span class="function"><span class="params">                 input_vocab_size,</span></span></span><br><span class="line"><span class="function"><span class="params">                 target_vocab_size,</span></span></span><br><span class="line"><span class="function"><span class="params">                 max_length,</span></span></span><br><span class="line"><span class="function"><span class="params">                 d_model,</span></span></span><br><span class="line"><span class="function"><span class="params">                 num_heads,</span></span></span><br><span class="line"><span class="function"><span class="params">                 dff,</span></span></span><br><span class="line"><span class="function"><span class="params">                 rate=<span class="number">0.1</span>)</span>:</span></span><br><span class="line">        <span class="string">"""</span></span><br><span class="line"><span class="string">        Args:</span></span><br><span class="line"><span class="string">        num_layers: 本模型中Encoder和Decoder中的层数相同，故此处不做区分。</span></span><br><span class="line"><span class="string">        input_vocab_size: 输入词表大小</span></span><br><span class="line"><span class="string">        target_vocab_size: 目标词表大小</span></span><br><span class="line"><span class="string">        max_length: 序列最大长度</span></span><br><span class="line"><span class="string">        d_model: d_model = embedding_dim</span></span><br><span class="line"><span class="string">        num_heads: 多头数</span></span><br><span class="line"><span class="string">        dff: dim of feed forword network</span></span><br><span class="line"><span class="string">        rate=0.1: the rate of dropout</span></span><br><span class="line"><span class="string">        """</span></span><br><span class="line">        super(Transformer, self).__init__()</span><br><span class="line"></span><br><span class="line">        self.encoder_model = EncoderModel(num_layers, input_vocab_size,</span><br><span class="line">                                          max_length, d_model, num_heads, dff,</span><br><span class="line">                                          rate)</span><br><span class="line"></span><br><span class="line">        self.decoder_model = DecoderModel(num_layers, target_vocab_size,</span><br><span class="line">                                          max_length, d_model, num_heads, dff,</span><br><span class="line">                                          rate)</span><br><span class="line"></span><br><span class="line">        self.final_layer = keras.layers.Dense(target_vocab_size)</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">call</span><span class="params">(self, inp, tar, training, encoder_padding_mask, decoder_mask,</span></span></span><br><span class="line"><span class="function"><span class="params">             encoder_decoder_padding_mask)</span>:</span></span><br><span class="line"></span><br><span class="line">        <span class="comment"># encoding_outputs.shape: (batch_size, input_seq_len, d_model)</span></span><br><span class="line">        encoding_outputs = self.encoder_model(inp, training,</span><br><span class="line">                                              encoder_padding_mask)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># decoding_outputs.shape: (batch_size, output_seq_len, d_model)</span></span><br><span class="line">        decoding_outputs, attention_weights = self.decoder_model(</span><br><span class="line">            tar, encoding_outputs, training, decoder_mask,</span><br><span class="line">            encoder_decoder_padding_mask)</span><br><span class="line"></span><br><span class="line">        <span class="comment"># predictions.shape: (batch_size, output_seq_len, target_vocab_size)</span></span><br><span class="line">        predictions = self.final_layer(decoding_outputs)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> predictions, attention_weights</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">sample_transformer = Transformer(<span class="number">2</span>, <span class="number">8500</span>, <span class="number">8000</span>, max_length, <span class="number">512</span>, <span class="number">8</span>, <span class="number">2048</span>)</span><br><span class="line">temp_input = tf.random.uniform((<span class="number">64</span>, <span class="number">26</span>))</span><br><span class="line">temp_target = tf.random.uniform((<span class="number">64</span>, <span class="number">31</span>))</span><br><span class="line">predictions, attention_weights = sample_transformer(</span><br><span class="line">    temp_input,</span><br><span class="line">    temp_target,</span><br><span class="line">    training=<span class="literal">False</span>,</span><br><span class="line">    encoder_padding_mask=<span class="literal">None</span>,</span><br><span class="line">    decoder_mask=<span class="literal">None</span>,</span><br><span class="line">    encoder_decoder_padding_mask=<span class="literal">None</span>)</span><br><span class="line">print(predictions.shape)</span><br><span class="line"><span class="keyword">for</span> key <span class="keyword">in</span> attention_weights.keys():</span><br><span class="line">    print(key, attention_weights[key].shape)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 31, 8000)
+decoder_layer1_att1 (64, 8, 31, 31)
+decoder_layer1_att2 (64, 8, 31, 26)
+decoder_layer2_att1 (64, 8, 31, 31)
+decoder_layer2_att2 (64, 8, 31, 26)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 1. initializes model.</span></span><br><span class="line"><span class="comment"># 2. define loss, optimizer, learning_rate schedule</span></span><br><span class="line"><span class="comment"># 3. train_step</span></span><br><span class="line"><span class="comment"># 4. train process</span></span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">num_layers = <span class="number">4</span></span><br><span class="line">d_model = <span class="number">128</span></span><br><span class="line">dff = <span class="number">512</span></span><br><span class="line">num_heads = <span class="number">8</span></span><br><span class="line"></span><br><span class="line">input_vocab_size = pt_tokenizer.vocab_size + <span class="number">2</span></span><br><span class="line">target_vocab_size = en_tokenizer.vocab_size + <span class="number">2</span></span><br><span class="line"></span><br><span class="line">dropout_rate = <span class="number">0.1</span></span><br><span class="line"></span><br><span class="line">transformer = Transformer(num_layers, input_vocab_size, target_vocab_size,</span><br><span class="line">                          max_length, d_model, num_heads, dff, dropout_rate)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># lrate = (d_model ** -0.5) * min(step_num ** (-0.5), step_num * warmup_steps ** (-1.5))</span></span><br><span class="line"><span class="comment"># d_model为模型的大小。模型l越大越难拟合，不宜使用过大的学习率，所以直观上此公式符合该规律。</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">CustomizedSchedule</span><span class="params">(keras.optimizers.schedules.LearningRateSchedule)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, d_model, warmup_steps=<span class="number">4000</span>)</span>:</span></span><br><span class="line">        super(CustomizedSchedule, self).__init__()</span><br><span class="line">        self.d_model = tf.cast(d_model, tf.float32)</span><br><span class="line">        self.warmup_steps = warmup_steps</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__call__</span><span class="params">(self, step)</span>:</span></span><br><span class="line">        arg1 = tf.math.rsqrt(step)</span><br><span class="line">        arg2 = step * (self.warmup_steps**(<span class="number">-1.5</span>))</span><br><span class="line"></span><br><span class="line">        arg3 = tf.math.rsqrt(self.d_model)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">return</span> arg3 * tf.math.minimum(arg1, arg2)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">learning_rate = CustomizedSchedule(d_model)</span><br><span class="line">optimizer = keras.optimizers.Adam(learning_rate=learning_rate,</span><br><span class="line">                                  beta_1=<span class="number">0.9</span>,</span><br><span class="line">                                  beta_2=<span class="number">0.98</span>,</span><br><span class="line">                                  epsilon=<span class="number">1e-9</span>)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">temp_learning_rate_schedule = CustomizedSchedule(d_model)</span><br><span class="line"></span><br><span class="line">plt.plot(temp_learning_rate_schedule(tf.range(<span class="number">40000</span>, dtype=tf.float32)))</span><br><span class="line">plt.ylabel(<span class="string">'Learning rate'</span>)</span><br><span class="line">plt.xlabel(<span class="string">'Train step'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Text(0.5, 0, &apos;Train step&apos;)</code></pre><p><img src="/2020/05/13/transformer/output_30_1.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">loss_object = keras.losses.SparseCategoricalCrossentropy(from_logits=<span class="literal">True</span>,</span><br><span class="line">                                                         reduction=<span class="string">'none'</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">loss_function</span><span class="params">(real, pred)</span>:</span></span><br><span class="line">    mask = tf.math.logical_not(tf.math.equal(real, <span class="number">0</span>))</span><br><span class="line">    loss_ = loss_object(real, pred)</span><br><span class="line">    </span><br><span class="line">    mask = tf.cast(mask, dtype=loss_.dtype)</span><br><span class="line">    loss_ *= mask</span><br><span class="line">    <span class="keyword">return</span> tf.reduce_mean(loss_)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">create_masks</span><span class="params">(inp, tar)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    为数据集中的每条数据都创建所需要的mask, 对每条数据， 其训练过程中的mask为：</span></span><br><span class="line"><span class="string">    Encoder:</span></span><br><span class="line"><span class="string">     - encoder_padding_mask:         train sequence中padding的部分不需要做attention.</span></span><br><span class="line"><span class="string">                                     作用在：self attention of EncoderLayer</span></span><br><span class="line"><span class="string">    Decoder:</span></span><br><span class="line"><span class="string">     - decoder_padding_mask:         target sequence中padding的部分不需要做attention.</span></span><br><span class="line"><span class="string">                                     作用在：self attention of DecoderLayer</span></span><br><span class="line"><span class="string">     - look_ahead_mask:              训练过程中，target sequence中对某一单词做attention时，</span></span><br><span class="line"><span class="string">                                     不能计算其与其后面单词的注意力分数。</span></span><br><span class="line"><span class="string">                                     作用在：self attention of DecoderLayer</span></span><br><span class="line"><span class="string">     - encoder_decoder_padding_mask: decoder中某一隐含状态需要与encoder_outputs中的每一个输出做attention，</span></span><br><span class="line"><span class="string">                                     但是对于encoder_outputs中存在padding项，对于padding的部分，无需计算</span></span><br><span class="line"><span class="string">                                     注意力。</span></span><br><span class="line"><span class="string">                                     作用在：encoder_decoder attention of DecoderLayer</span></span><br><span class="line"><span class="string">    其中decoder_padding_mask和look_ahead_mask作用在Decoder的同一层上，所以需要做与操作。</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    encoder_padding_mask = create_padding_mask(inp)</span><br><span class="line">    encoder_decoder_padding_mask = create_padding_mask(inp)</span><br><span class="line"></span><br><span class="line">    look_ahead_mask = create_look_ahead_mask(tf.shape(tar)[<span class="number">1</span>])</span><br><span class="line">    decoder_padding_mask = create_padding_mask(tar)</span><br><span class="line">    <span class="comment"># 对于decoder的input中的每一个单词，既不应该注意到其后面的单词，也不应该注意到前面的padding的单词。</span></span><br><span class="line">    decoder_mask = tf.maximum(decoder_padding_mask, look_ahead_mask)</span><br><span class="line"></span><br><span class="line"><span class="comment">#     print(encoder_padding_mask.shape)</span></span><br><span class="line"><span class="comment">#     print(encoder_decoder_padding_mask.shape)</span></span><br><span class="line"><span class="comment">#     print(look_ahead_mask.shape)</span></span><br><span class="line"><span class="comment">#     print(decoder_padding_mask.shape)</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> encoder_padding_mask, decoder_mask, encoder_decoder_padding_mask</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">temp_inp, temp_tar = iter(train_dataset.take(<span class="number">1</span>)).next()</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">print(temp_inp.shape)</span><br><span class="line">print(temp_tar.shape)</span><br><span class="line">create_masks(temp_inp, temp_tar)</span><br></pre></td></tr></table></figure>
+
+<pre><code>(64, 38)
+(64, 40)
+
+
+
+
+
+(&lt;tf.Tensor: shape=(64, 1, 1, 38), dtype=float32, numpy=
+ array([[[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        ...,
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]]], dtype=float32)&gt;,
+ &lt;tf.Tensor: shape=(64, 1, 40, 40), dtype=float32, numpy=
+ array([[[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        ...,
+
+
+        [[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 1., 1., ..., 1., 1., 1.],
+          [0., 0., 1., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          ...,
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.],
+          [0., 0., 0., ..., 1., 1., 1.]]]], dtype=float32)&gt;,
+ &lt;tf.Tensor: shape=(64, 1, 1, 38), dtype=float32, numpy=
+ array([[[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        ...,
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]],
+
+
+        [[[0., 0., 0., ..., 1., 1., 1.]]]], dtype=float32)&gt;)</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">train_loss: 以batch为单位，累加每个batch上的loss,并求平均, 故train_loss单位为 loss/batch</span></span><br><span class="line"><span class="string">train_accuracy: 同上，每个batch上的准确率</span></span><br><span class="line"><span class="string">这两个指标只用于显示，并不参与训练</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line">train_loss = keras.metrics.Mean(name=<span class="string">'train_loss'</span>)</span><br><span class="line">train_accuracy = keras.metrics.SparseCategoricalAccuracy(name=<span class="string">'train_accuracy'</span>)</span><br><span class="line"></span><br><span class="line">train_step_signature = [</span><br><span class="line">    tf.TensorSpec(shape=(<span class="literal">None</span>, <span class="literal">None</span>), dtype=tf.int64),</span><br><span class="line">    tf.TensorSpec(shape=(<span class="literal">None</span>, <span class="literal">None</span>), dtype=tf.int64),</span><br><span class="line">]</span><br><span class="line"><span class="meta">@tf.function(input_signature=train_step_signature)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">train_step</span><span class="params">(inp, tar)</span>:</span></span><br><span class="line">    tar_inp = tar[:, :<span class="number">-1</span>]</span><br><span class="line">    tar_real = tar[:, <span class="number">1</span>:]</span><br><span class="line"></span><br><span class="line">    encoder_padding_mask, decoder_mask, encoder_decoder_padding_mask = create_masks(</span><br><span class="line">        inp, tar_inp)</span><br><span class="line">    <span class="keyword">with</span> tf.GradientTape() <span class="keyword">as</span> tape:</span><br><span class="line">        predictions, _ = transformer(inp, tar_inp, <span class="literal">True</span>, encoder_padding_mask,</span><br><span class="line">                                     decoder_mask,</span><br><span class="line">                                     encoder_decoder_padding_mask)</span><br><span class="line">        loss = loss_function(tar_real, predictions)</span><br><span class="line"></span><br><span class="line">    gradients = tape.gradient(loss, transformer.trainable_variables)</span><br><span class="line">    optimizer.apply_gradients(zip(gradients, transformer.trainable_variables))</span><br><span class="line">    train_loss(loss)</span><br><span class="line">    train_accuracy(tar_real, predictions)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">epochs = <span class="number">20</span></span><br><span class="line"><span class="keyword">for</span> epoch <span class="keyword">in</span> range(epochs):</span><br><span class="line">    start = time.time()</span><br><span class="line">    train_loss.reset_states()</span><br><span class="line">    train_accuracy.reset_states()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> (batch, (inp, tar)) <span class="keyword">in</span> enumerate(train_dataset):</span><br><span class="line">        train_step(inp, tar)</span><br><span class="line">        <span class="keyword">if</span> batch % <span class="number">100</span> == <span class="number">0</span>:</span><br><span class="line">            print(<span class="string">'Epoch &#123;&#125; Batch &#123;&#125; Loss &#123;:.4f&#125; Accuracy &#123;:.4f&#125;'</span>.format(</span><br><span class="line">                epoch + <span class="number">1</span>, batch, train_loss.result(),</span><br><span class="line">                train_accuracy.result()))</span><br><span class="line"></span><br><span class="line">    print(<span class="string">'Epoch &#123;&#125; Loss &#123;:.4f&#125; Accuracy &#123;:.4f&#125;'</span>.format(</span><br><span class="line">        epoch + <span class="number">1</span>, train_loss.result(), train_accuracy.result()))</span><br><span class="line">    print(<span class="string">'Time take for 1 epoch: &#123;&#125; secs\n'</span>.format(time.time() - start))</span><br></pre></td></tr></table></figure>
+
+<pre><code>Epoch 1 Batch 0 Loss 4.4194 Accuracy 0.0000
+Epoch 1 Batch 100 Loss 4.1633 Accuracy 0.0149
+Epoch 1 Batch 200 Loss 4.0548 Accuracy 0.0244
+Epoch 1 Batch 300 Loss 3.9067 Accuracy 0.0340
+Epoch 1 Batch 400 Loss 3.7226 Accuracy 0.0411
+Epoch 1 Batch 500 Loss 3.5698 Accuracy 0.0487
+Epoch 1 Batch 600 Loss 3.4341 Accuracy 0.0567
+Epoch 1 Batch 700 Loss 3.3126 Accuracy 0.0638
+Epoch 1 Loss 3.3109 Accuracy 0.0639
+Time take for 1 epoch: 1501.406435251236 secs
+
+Epoch 2 Batch 0 Loss 2.6902 Accuracy 0.1150
+Epoch 2 Batch 100 Loss 2.4438 Accuracy 0.1159
+Epoch 2 Batch 200 Loss 2.4002 Accuracy 0.1185
+Epoch 2 Batch 300 Loss 2.3858 Accuracy 0.1214
+Epoch 2 Batch 400 Loss 2.3656 Accuracy 0.1235
+Epoch 2 Batch 500 Loss 2.3478 Accuracy 0.1259
+Epoch 2 Batch 600 Loss 2.3378 Accuracy 0.1282
+Epoch 2 Batch 700 Loss 2.3176 Accuracy 0.1299
+Epoch 2 Loss 2.3172 Accuracy 0.1300
+Time take for 1 epoch: 1429.5275447368622 secs
+
+Epoch 3 Batch 0 Loss 1.9690 Accuracy 0.1397
+Epoch 3 Batch 100 Loss 2.1808 Accuracy 0.1452
+Epoch 3 Batch 200 Loss 2.1403 Accuracy 0.1460
+Epoch 3 Batch 300 Loss 2.1247 Accuracy 0.1468
+Epoch 3 Batch 400 Loss 2.1144 Accuracy 0.1487
+Epoch 3 Batch 500 Loss 2.1014 Accuracy 0.1509
+Epoch 3 Batch 600 Loss 2.0871 Accuracy 0.1523
+Epoch 3 Batch 700 Loss 2.0773 Accuracy 0.1539
+Epoch 3 Loss 2.0777 Accuracy 0.1540
+Time take for 1 epoch: 1483.9826645851135 secs
+
+Epoch 4 Batch 0 Loss 1.7831 Accuracy 0.1558
+Epoch 4 Batch 100 Loss 1.9128 Accuracy 0.1655
+Epoch 4 Batch 200 Loss 1.9072 Accuracy 0.1687
+Epoch 4 Batch 300 Loss 1.9042 Accuracy 0.1710
+Epoch 4 Batch 400 Loss 1.8887 Accuracy 0.1733
+Epoch 4 Batch 500 Loss 1.8748 Accuracy 0.1760
+Epoch 4 Batch 600 Loss 1.8588 Accuracy 0.1775
+Epoch 4 Batch 700 Loss 1.8479 Accuracy 0.1794
+Epoch 4 Loss 1.8480 Accuracy 0.1795
+Time take for 1 epoch: 1414.8520936965942 secs
+
+Epoch 5 Batch 0 Loss 1.9223 Accuracy 0.2226
+Epoch 5 Batch 100 Loss 1.6692 Accuracy 0.1978
+Epoch 5 Batch 200 Loss 1.6727 Accuracy 0.1992
+Epoch 5 Batch 300 Loss 1.6637 Accuracy 0.2002
+Epoch 5 Batch 400 Loss 1.6577 Accuracy 0.2014
+Epoch 5 Batch 500 Loss 1.6493 Accuracy 0.2028
+Epoch 5 Batch 600 Loss 1.6436 Accuracy 0.2040
+Epoch 5 Batch 700 Loss 1.6349 Accuracy 0.2055
+Epoch 5 Loss 1.6348 Accuracy 0.2055
+Time take for 1 epoch: 1422.2958707809448 secs
+
+Epoch 6 Batch 0 Loss 1.2876 Accuracy 0.2011
+Epoch 6 Batch 100 Loss 1.4666 Accuracy 0.2197
+Epoch 6 Batch 200 Loss 1.4627 Accuracy 0.2199
+Epoch 6 Batch 300 Loss 1.4615 Accuracy 0.2208
+Epoch 6 Batch 400 Loss 1.4583 Accuracy 0.2220
+Epoch 6 Batch 500 Loss 1.4565 Accuracy 0.2232
+Epoch 6 Batch 600 Loss 1.4501 Accuracy 0.2246
+Epoch 6 Batch 700 Loss 1.4461 Accuracy 0.2253
+Epoch 6 Loss 1.4468 Accuracy 0.2253
+Time take for 1 epoch: 1420.1133754253387 secs
+
+Epoch 7 Batch 0 Loss 1.3153 Accuracy 0.2366
+Epoch 7 Batch 100 Loss 1.2860 Accuracy 0.2414
+Epoch 7 Batch 200 Loss 1.2790 Accuracy 0.2425
+Epoch 7 Batch 300 Loss 1.2829 Accuracy 0.2423
+Epoch 7 Batch 400 Loss 1.2750 Accuracy 0.2428
+Epoch 7 Batch 500 Loss 1.2714 Accuracy 0.2442
+Epoch 7 Batch 600 Loss 1.2688 Accuracy 0.2451
+Epoch 7 Batch 700 Loss 1.2657 Accuracy 0.2461
+Epoch 7 Loss 1.2660 Accuracy 0.2461
+Time take for 1 epoch: 1420.649710893631 secs
+
+Epoch 8 Batch 0 Loss 1.2569 Accuracy 0.2747
+Epoch 8 Batch 100 Loss 1.1093 Accuracy 0.2616
+Epoch 8 Batch 200 Loss 1.1140 Accuracy 0.2602
+Epoch 8 Batch 300 Loss 1.1138 Accuracy 0.2614
+Epoch 8 Batch 400 Loss 1.1136 Accuracy 0.2615
+Epoch 8 Batch 500 Loss 1.1169 Accuracy 0.2625
+Epoch 8 Batch 600 Loss 1.1161 Accuracy 0.2631
+Epoch 8 Batch 700 Loss 1.1150 Accuracy 0.2631
+Epoch 8 Loss 1.1150 Accuracy 0.2632
+Time take for 1 epoch: 1430.6083216667175 secs
+
+Epoch 9 Batch 0 Loss 1.1143 Accuracy 0.2859
+Epoch 9 Batch 100 Loss 0.9854 Accuracy 0.2775
+Epoch 9 Batch 200 Loss 0.9909 Accuracy 0.2768
+Epoch 9 Batch 300 Loss 0.9948 Accuracy 0.2764
+Epoch 9 Batch 400 Loss 0.9964 Accuracy 0.2772
+Epoch 9 Batch 500 Loss 1.0010 Accuracy 0.2775
+Epoch 9 Batch 600 Loss 1.0054 Accuracy 0.2775
+Epoch 9 Batch 700 Loss 1.0064 Accuracy 0.2770
+Epoch 9 Loss 1.0063 Accuracy 0.2770
+Time take for 1 epoch: 1493.6901807785034 secs
+
+Epoch 10 Batch 0 Loss 0.7144 Accuracy 0.2776
+Epoch 10 Batch 100 Loss 0.9023 Accuracy 0.2917
+Epoch 10 Batch 200 Loss 0.9075 Accuracy 0.2905
+Epoch 10 Batch 300 Loss 0.9116 Accuracy 0.2902
+Epoch 10 Batch 400 Loss 0.9148 Accuracy 0.2899
+Epoch 10 Batch 500 Loss 0.9150 Accuracy 0.2891
+Epoch 10 Batch 600 Loss 0.9188 Accuracy 0.2879
+Epoch 10 Batch 700 Loss 0.9220 Accuracy 0.2873
+Epoch 10 Loss 0.9223 Accuracy 0.2874
+Time take for 1 epoch: 1462.3251810073853 secs
+
+Epoch 11 Batch 0 Loss 0.8465 Accuracy 0.3057
+Epoch 11 Batch 100 Loss 0.8375 Accuracy 0.3001
+Epoch 11 Batch 200 Loss 0.8420 Accuracy 0.2995
+Epoch 11 Batch 300 Loss 0.8453 Accuracy 0.2983
+Epoch 11 Batch 400 Loss 0.8488 Accuracy 0.2982
+Epoch 11 Batch 500 Loss 0.8516 Accuracy 0.2973
+Epoch 11 Batch 600 Loss 0.8565 Accuracy 0.2969
+Epoch 11 Batch 700 Loss 0.8601 Accuracy 0.2970
+Epoch 11 Loss 0.8600 Accuracy 0.2970
+Time take for 1 epoch: 1454.8198113441467 secs
+
+Epoch 12 Batch 0 Loss 0.7785 Accuracy 0.2861
+Epoch 12 Batch 100 Loss 0.7620 Accuracy 0.3063
+Epoch 12 Batch 200 Loss 0.7725 Accuracy 0.3071
+Epoch 12 Batch 300 Loss 0.7835 Accuracy 0.3074
+Epoch 12 Batch 400 Loss 0.7905 Accuracy 0.3061
+Epoch 12 Batch 500 Loss 0.7961 Accuracy 0.3056
+Epoch 12 Batch 600 Loss 0.8003 Accuracy 0.3046
+Epoch 12 Batch 700 Loss 0.8052 Accuracy 0.3035
+Epoch 12 Loss 0.8053 Accuracy 0.3035
+Time take for 1 epoch: 1453.3642852306366 secs
+
+Epoch 13 Batch 0 Loss 0.7461 Accuracy 0.3647
+Epoch 13 Batch 100 Loss 0.7159 Accuracy 0.3162
+Epoch 13 Batch 200 Loss 0.7337 Accuracy 0.3148
+Epoch 13 Batch 300 Loss 0.7365 Accuracy 0.3127
+Epoch 13 Batch 400 Loss 0.7432 Accuracy 0.3118
+Epoch 13 Batch 500 Loss 0.7519 Accuracy 0.3114
+Epoch 13 Batch 600 Loss 0.7568 Accuracy 0.3112
+Epoch 13 Batch 700 Loss 0.7621 Accuracy 0.3106
+Epoch 13 Loss 0.7622 Accuracy 0.3106
+Time take for 1 epoch: 1441.3918175697327 secs
+
+Epoch 14 Batch 0 Loss 0.6012 Accuracy 0.2895
+Epoch 14 Batch 100 Loss 0.6744 Accuracy 0.3177
+Epoch 14 Batch 200 Loss 0.6891 Accuracy 0.3176
+Epoch 14 Batch 300 Loss 0.6982 Accuracy 0.3173
+Epoch 14 Batch 400 Loss 0.7026 Accuracy 0.3169
+Epoch 14 Batch 500 Loss 0.7077 Accuracy 0.3166
+Epoch 14 Batch 600 Loss 0.7160 Accuracy 0.3160
+Epoch 14 Batch 700 Loss 0.7221 Accuracy 0.3154
+Epoch 14 Loss 0.7222 Accuracy 0.3154
+Time take for 1 epoch: 1430.102513551712 secs
+
+Epoch 15 Batch 0 Loss 0.6714 Accuracy 0.3396
+Epoch 15 Batch 100 Loss 0.6608 Accuracy 0.3265
+Epoch 15 Batch 200 Loss 0.6589 Accuracy 0.3235
+Epoch 15 Batch 300 Loss 0.6670 Accuracy 0.3233
+Epoch 15 Batch 400 Loss 0.6751 Accuracy 0.3239
+Epoch 15 Batch 500 Loss 0.6792 Accuracy 0.3233
+Epoch 15 Batch 600 Loss 0.6864 Accuracy 0.3225
+Epoch 15 Batch 700 Loss 0.6911 Accuracy 0.3218
+Epoch 15 Loss 0.6908 Accuracy 0.3217
+Time take for 1 epoch: 1489.9207346439362 secs
+
+Epoch 16 Batch 0 Loss 0.6183 Accuracy 0.3633
+Epoch 16 Batch 100 Loss 0.6202 Accuracy 0.3317
+Epoch 16 Batch 200 Loss 0.6296 Accuracy 0.3298
+Epoch 16 Batch 300 Loss 0.6352 Accuracy 0.3278
+Epoch 16 Batch 400 Loss 0.6417 Accuracy 0.3274
+Epoch 16 Batch 500 Loss 0.6475 Accuracy 0.3275
+Epoch 16 Batch 600 Loss 0.6530 Accuracy 0.3265
+Epoch 16 Batch 700 Loss 0.6580 Accuracy 0.3256
+Epoch 16 Loss 0.6584 Accuracy 0.3256
+Time take for 1 epoch: 1519.223790884018 secs
+
+Epoch 17 Batch 0 Loss 0.7199 Accuracy 0.4098
+Epoch 17 Batch 100 Loss 0.5992 Accuracy 0.3378
+Epoch 17 Batch 200 Loss 0.6053 Accuracy 0.3334
+Epoch 17 Batch 300 Loss 0.6103 Accuracy 0.3326
+Epoch 17 Batch 400 Loss 0.6161 Accuracy 0.3319
+Epoch 17 Batch 500 Loss 0.6229 Accuracy 0.3311
+Epoch 17 Batch 600 Loss 0.6277 Accuracy 0.3307
+Epoch 17 Batch 700 Loss 0.6328 Accuracy 0.3294
+Epoch 17 Loss 0.6329 Accuracy 0.3294
+Time take for 1 epoch: 1485.4576337337494 secs
+
+Epoch 18 Batch 0 Loss 0.5724 Accuracy 0.3220
+Epoch 18 Batch 100 Loss 0.5764 Accuracy 0.3363
+Epoch 18 Batch 200 Loss 0.5827 Accuracy 0.3374
+Epoch 18 Batch 300 Loss 0.5891 Accuracy 0.3371
+Epoch 18 Batch 400 Loss 0.5941 Accuracy 0.3355
+Epoch 18 Batch 500 Loss 0.5995 Accuracy 0.3344
+Epoch 18 Batch 600 Loss 0.6040 Accuracy 0.3338
+Epoch 18 Batch 700 Loss 0.6088 Accuracy 0.3330
+Epoch 18 Loss 0.6088 Accuracy 0.3330
+Time take for 1 epoch: 1476.7011284828186 secs
+
+Epoch 19 Batch 0 Loss 0.6577 Accuracy 0.3546
+Epoch 19 Batch 100 Loss 0.5437 Accuracy 0.3411
+Epoch 19 Batch 200 Loss 0.5607 Accuracy 0.3421
+Epoch 19 Batch 300 Loss 0.5657 Accuracy 0.3400
+Epoch 19 Batch 400 Loss 0.5704 Accuracy 0.3390
+Epoch 19 Batch 500 Loss 0.5762 Accuracy 0.3380
+Epoch 19 Batch 600 Loss 0.5821 Accuracy 0.3377
+Epoch 19 Batch 700 Loss 0.5876 Accuracy 0.3369
+Epoch 19 Loss 0.5879 Accuracy 0.3369
+Time take for 1 epoch: 1414.2364287376404 secs
+
+Epoch 20 Batch 0 Loss 0.5179 Accuracy 0.3113
+Epoch 20 Batch 100 Loss 0.5314 Accuracy 0.3440
+Epoch 20 Batch 200 Loss 0.5418 Accuracy 0.3428
+Epoch 20 Batch 300 Loss 0.5487 Accuracy 0.3432
+Epoch 20 Batch 400 Loss 0.5541 Accuracy 0.3428
+Epoch 20 Batch 500 Loss 0.5569 Accuracy 0.3416
+Epoch 20 Batch 600 Loss 0.5633 Accuracy 0.3409
+Epoch 20 Batch 700 Loss 0.5690 Accuracy 0.3402
+Epoch 20 Loss 0.5690 Accuracy 0.3402
+Time take for 1 epoch: 1407.2577855587006 secs</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">e.g: A B C D -&gt; E F G H</span></span><br><span class="line"><span class="string">Train: A B C D, E F G -&gt; F G H</span></span><br><span class="line"><span class="string">训练过程中希望，模型输入为A B C D, E 时， 预测出F</span></span><br><span class="line"><span class="string">               模型输入为A B C D, E F 时， 预测出G</span></span><br><span class="line"><span class="string">               模型输入为A B C D, E F G时，预测出H</span></span><br><span class="line"><span class="string">因为训练的过程中种有look_ahead_mask保证，所以矩阵同时输入。</span></span><br><span class="line"><span class="string">Eval: A B C D, -&gt; E</span></span><br><span class="line"><span class="string">      A B C D, E -&gt; F</span></span><br><span class="line"><span class="string">      A B C D, E F -&gt; G</span></span><br><span class="line"><span class="string">      A B C D, E F G -&gt; H</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">evaluate</span><span class="params">(inp_sentence)</span>:</span></span><br><span class="line">    input_id_sentence = [</span><br><span class="line">        pt_tokenizer.vocab_size</span><br><span class="line">    ] + pt_tokenizer.encode(inp_sentence) + [pt_tokenizer.vocab_size + <span class="number">1</span>]</span><br><span class="line">    <span class="comment"># encoder_input.shape: (1, input_sentence_length)</span></span><br><span class="line">    encoder_input = tf.expand_dims(input_id_sentence, <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># decoder_input.shape: (1, 1)</span></span><br><span class="line">    decoder_input = tf.expand_dims([en_tokenizer.vocab_size], <span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(max_length):</span><br><span class="line">        encoder_padding_mask, decoder_mask, encoder_decoder_padding_mask = create_masks(</span><br><span class="line">            encoder_input, decoder_input)</span><br><span class="line">        <span class="comment"># predictions.shape: (batch_size, output_target_len, target_vocab_size)</span></span><br><span class="line">        predictions, attention_weights = transformer(</span><br><span class="line">            encoder_input, decoder_input, <span class="literal">False</span>, encoder_padding_mask,</span><br><span class="line">            decoder_mask, encoder_decoder_padding_mask)</span><br><span class="line">        <span class="comment"># predictions.shape: (batch_size, 1, target_vocab_size)</span></span><br><span class="line">        predictions = predictions[:, <span class="number">-1</span>, :]</span><br><span class="line">        predicted_id = tf.cast(tf.argmax(predictions, axis=<span class="number">-1</span>), tf.int32)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> tf.equal(predicted_id, en_tokenizer.vocab_size + <span class="number">1</span>):</span><br><span class="line">            <span class="keyword">return</span> tf.squeeze(decoder_input, axis=<span class="number">0</span>), attention_weights</span><br><span class="line"></span><br><span class="line">        decoder_input = tf.concat([decoder_input, [predicted_id]], axis=<span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> tf.sequeeze(decoder_input, axis=<span class="number">0</span>), attention_weights</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">plot_encoder_decoder_attention</span><span class="params">(attention, input_sentence, result,</span></span></span><br><span class="line"><span class="function"><span class="params">                                   layer_name)</span>:</span></span><br><span class="line">    fig = plt.figure(figsize=(<span class="number">16</span>, <span class="number">8</span>))</span><br><span class="line"></span><br><span class="line">    input_id_sentence = pt_tokenizer.encode(input_sentence)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># attention[layer_name].shape: (num_heads, tar_len, input_len)</span></span><br><span class="line">    attention = tf.squeeze(attention[layer_name], axis=<span class="number">0</span>)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">for</span> head <span class="keyword">in</span> range(attention.shape[<span class="number">0</span>]):</span><br><span class="line">        ax = fig.add_subplot(<span class="number">2</span>, <span class="number">4</span>, head + <span class="number">1</span>)</span><br><span class="line">        ax.matshow(attention[head][:<span class="number">-1</span>, :])</span><br><span class="line"></span><br><span class="line">        fontdict = &#123;<span class="string">'fontsize'</span>: <span class="number">10</span>&#125;</span><br><span class="line"></span><br><span class="line">        ax.set_xticks(range(len(input_id_sentence) + <span class="number">2</span>))</span><br><span class="line">        ax.set_yticks(range(len(result)))</span><br><span class="line"></span><br><span class="line">        ax.set_ylim(len(result) - <span class="number">1.5</span>, <span class="number">-0.5</span>)</span><br><span class="line">        ax.set_xticklabels(</span><br><span class="line">            [<span class="string">'&lt;start&gt;'</span>] +</span><br><span class="line">            [pt_tokenizer.decode([i]) <span class="keyword">for</span> i <span class="keyword">in</span> input_id_sentence] + [<span class="string">'&lt;end&gt;'</span>],</span><br><span class="line">            fontdict=fontdict,</span><br><span class="line">            rotation=<span class="number">90</span>)</span><br><span class="line">        ax.set_yticklabels([</span><br><span class="line">            en_tokenizer.decode([i])</span><br><span class="line">            <span class="keyword">for</span> i <span class="keyword">in</span> result <span class="keyword">if</span> i &lt; en_tokenizer.vocab_size</span><br><span class="line">        ],</span><br><span class="line">                           fontdict=fontdict)</span><br><span class="line">        ax.set_xlabel(<span class="string">'Head &#123;&#125;'</span>.format(head + <span class="number">1</span>))</span><br><span class="line">    plt.tight_layout()</span><br><span class="line">    plt.show()</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">translate</span><span class="params">(input_sentence, layer_name=<span class="string">''</span>)</span>:</span></span><br><span class="line">    result, attention_weights = evaluate(input_sentence)</span><br><span class="line"></span><br><span class="line">    predicted_sentence = en_tokenizer.decode(</span><br><span class="line">        [i <span class="keyword">for</span> i <span class="keyword">in</span> result <span class="keyword">if</span> i &lt; en_tokenizer.vocab_size])</span><br><span class="line">    print(<span class="string">"Input: &#123;&#125;"</span>.format(input_sentence))</span><br><span class="line">    print(<span class="string">"Predicted translation: &#123;&#125;"</span>.format(predicted_sentence))</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> layer_name:</span><br><span class="line">        plot_encoder_decoder_attention(attention_weights, input_sentence,</span><br><span class="line">                                       result, layer_name)</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">'está muito frio aqui.'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: está muito frio aqui.
+Predicted translation: it &apos;s very coldly here , here &apos;s all the way here of the u.s .</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">'esta é a minha vida.'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: esta é a minha vida.
+Predicted translation: this is my life .</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">'você ainda está em casa?'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: você ainda está em casa?
+Predicted translation: are you even home ?</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">translate(<span class="string">'este é o primeiro livro que eu já li.'</span>, layer_name = <span class="string">'decoder_layer4_att2'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>Input: este é o primeiro livro que eu já li.
+Predicted translation: this is the first book that i am already about .</code></pre><p><img src="/2020/05/13/transformer/output_42_1.png" alt="png"></p>
+<h4 id="模型不够强大的原因"><a href="#模型不够强大的原因" class="headerlink" title="模型不够强大的原因"></a>模型不够强大的原因</h4><ul>
+<li>数据量小</li>
+<li>模型未训练充分，只训练了20个epoch</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div>谢谢老板！祝老板越来越大！</div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt="老许头 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/alipay.jpg" alt="老许头 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/机器翻译/" rel="tag"><i class="fa fa-tag"></i> 机器翻译</a>
+            
+              <a href="/tags/Transformer/" rel="tag"><i class="fa fa-tag"></i> Transformer</a>
+            
+              <a href="/tags/self-attention/" rel="tag"><i class="fa fa-tag"></i> self attention</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/05/07/seq2seq-attention/" rel="next" title="基于Attention机制的Encoder-Decoder框架实现机器翻译">
+                  <i class="fa fa-chevron-left"></i> 基于Attention机制的Encoder-Decoder框架实现机器翻译
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#能否去掉RNN？"><span class="nav-number">1.</span> <span class="nav-text">能否去掉RNN？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#能够给输入输出分别加上self-attention"><span class="nav-number">2.</span> <span class="nav-text">能够给输入输出分别加上self attention?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Transformer模型"><span class="nav-number">3.</span> <span class="nav-text">Transformer模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#代码实战"><span class="nav-number">4.</span> <span class="nav-text">代码实战</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#模型不够强大的原因"><span class="nav-number">5.</span> <span class="nav-text">模型不够强大的原因</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar.jpg"
+      alt="老许头">
+  <p class="site-author-name" itemprop="name">老许头</p>
+  <div class="site-description" itemprop="description">在我26岁的一天</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-categories">
+        
+          
+            <a href="/categories/">
+          
+        
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">分类</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">12</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/P196025" title="GitHub &rarr; https://github.com/P196025" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://weibo.com/5578942666" title="微  博 &rarr; https://weibo.com/5578942666" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微  博</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:291234254@qq.com" title="QQ邮箱 &rarr; mailto:291234254@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>QQ邮箱</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="/291234254" title="微  信 &rarr; 291234254"><i class="fa fa-fw fa-wechat"></i>微  信</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      导 航
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/370872984" title="https://space.bilibili.com/370872984" rel="noopener" target="_blank">bilibili</a>
+        </li>
+      
+    </ul>
+  </div>
+
+      </div>
+		<div id="music163player">
+		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=4899849689&auto=0&height=430"></iframe>
+		</div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">老许头</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">71k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:05</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.4.1</div>-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'tpW2iM2vzfyEhQ1HvWUwvCHH-gzGzoHsz',
+    appKey: 'jpljpKR66zCUmVNwtV0OPwS2',
+    placeholder: '快来发表您的意见吧~',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
+  });
+}, window.Valine);
+</script>
+
+</body>
+</html>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/clicklove.js"></script>

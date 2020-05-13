@@ -57,22 +57,22 @@
   };
 </script>
 
-  <meta name="description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+  <meta name="description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列  多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享  如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的">
 <meta name="keywords" content="机器翻译,Seq2Seq,RNN,Attention">
 <meta property="og:type" content="article">
 <meta property="og:title" content="基于Attention机制的Encoder-Decoder框架实现机器翻译">
 <meta property="og:url" content="http://xuwentao.com/2020/05/07/seq2seq-attention/index.html">
 <meta property="og:site_name" content="Y&amp;B">
-<meta property="og:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+<meta property="og:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列  多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享  如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/image.png">
 <meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_19_1.png">
 <meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_20_1.png">
 <meta property="og:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/output_21_1.png">
-<meta property="og:updated_time" content="2020-05-07T10:59:31.637Z">
+<meta property="og:updated_time" content="2020-05-13T13:32:47.865Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="基于Attention机制的Encoder-Decoder框架实现机器翻译">
-<meta name="twitter:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列">
+<meta name="twitter:description" content="循环神经网络(Recurrent Neural Networks) 为什么不是多层感知机(全连接前馈网络)？ 多层感知机不擅长或者说不能处理可变长序列  多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。 多层感知机不能进行参数共享  如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的">
 <meta name="twitter:image" content="http://xuwentao.com/2020/05/07/seq2seq-attention/image.png">
   <link rel="canonical" href="http://xuwentao.com/2020/05/07/seq2seq-attention/">
 
@@ -279,11 +279,19 @@
                 
               
 
-              <time title="创建时间：2020-05-07 18:47:01 / 修改时间：18:59:31" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
+              <time title="创建时间：2020-05-07 18:47:01" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-13 21:32:47" itemprop="dateModified" datetime="2020-05-13T21:32:47+08:00">2020-05-13</time>
+              </span>
             
           
 
@@ -341,19 +349,19 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h1 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h1><hr>
-<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ol>
-<li>多层感知机不擅长或者说不能处理可变长序列<br> 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
-<li>多层感知机不能进行参数共享<br> 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
-</ol>
-<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ol>
+        <h3 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h3><hr>
+<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ul>
+<li>多层感知机不擅长或者说不能处理可变长序列<br>  多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
+<li>多层感知机不能进行参数共享<br>  如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
+</ul>
+<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ul>
 <li>不同时间步内的参数共享</li>
 <li>不需要学习每个位置的规则<a id="more"></a>
 
 </li>
-</ol>
-<h2 id="1-Seq2Seq模型"><a href="#1-Seq2Seq模型" class="headerlink" title="1. Seq2Seq模型"></a>1. Seq2Seq模型</h2><p>&emsp;&emsp;Seq2Seq模型用来解决将可变长的输入序列映射到可变长的输出序列。这在许多场景中都有应用，如语音识别、机器翻译或问答等，其中训练集的输入序列和输出序列的长度通常不相同（虽然它们的长度可能相关）。</p>
-<h3 id="1-1-Encoder-Decoder架构"><a href="#1-1-Encoder-Decoder架构" class="headerlink" title="1.1 Encoder-Decoder架构"></a>1.1 Encoder-Decoder架构</h3><h4 id="1-1-1-架构基本原理及组成"><a href="#1-1-1-架构基本原理及组成" class="headerlink" title="1.1.1 架构基本原理及组成"></a>1.1.1 架构基本原理及组成</h4><p>&emsp;&emsp;用于将可变长度序列映射到另一可变长度序列最简单的RNN架构是Encoder-Decoder架构。其基本思想是：编码器的每个时间步分别输入单词特征向量（采用one-hot编码或Embedding），并输出上下文向量C（通常是最终时间步的隐层状态或其简单函数），通过该向量来表征输入句子的信息。解码器在每个时间步使用上下文向量C，上一时间步输出以及上一时间步的隐层状态为输入进行预测。如下图所示为Encoder-Decoder架构示意图，其中上下文向量通常为固定长度向量。</p>
+</ul>
+<h3 id="Seq2Seq模型"><a href="#Seq2Seq模型" class="headerlink" title="Seq2Seq模型"></a>Seq2Seq模型</h3><p>&emsp;&emsp;Seq2Seq模型用来解决将可变长的输入序列映射到可变长的输出序列。这在许多场景中都有应用，如语音识别、机器翻译或问答等，其中训练集的输入序列和输出序列的长度通常不相同（虽然它们的长度可能相关）。</p>
+<h4 id="Encoder-Decoder架构"><a href="#Encoder-Decoder架构" class="headerlink" title="Encoder-Decoder架构"></a>Encoder-Decoder架构</h4><h4 id="架构基本原理及组成"><a href="#架构基本原理及组成" class="headerlink" title="架构基本原理及组成"></a>架构基本原理及组成</h4><p>&emsp;&emsp;用于将可变长度序列映射到另一可变长度序列最简单的RNN架构是Encoder-Decoder架构。其基本思想是：编码器的每个时间步分别输入单词特征向量（采用one-hot编码或Embedding），并输出上下文向量C（通常是最终时间步的隐层状态或其简单函数），通过该向量来表征输入句子的信息。解码器在每个时间步使用上下文向量C，上一时间步输出以及上一时间步的隐层状态为输入进行预测。如下图所示为Encoder-Decoder架构示意图，其中上下文向量通常为固定长度向量。</p>
 <p><img src="/2020/05/07/seq2seq-attention/image.png" alt="png"></p>
 <h4 id="编码器Encoder"><a href="#编码器Encoder" class="headerlink" title="编码器Encoder"></a>编码器Encoder</h4><p>&emsp;&emsp;Encoder本身是一个RNN网络，RNN的单元可以是GRU，也可是LSTM。可以为单向,也可以为双向。<br>对于长度为$T_x$输入序列${x_1, x_2, … x_{T_x}}$, 在时间步$t$, 将单词$x_t$的特征向量和上个时间步的隐藏状态$h_{t-1}$, Encoder的作用是将一个可变长度序列映射为固定大小的上下文向量C，用以表征输入序列的语意概要。<br>其中:<br>时间步$t$的隐层状态为:&emsp;&emsp;&emsp;&emsp;$h_t = f(x_t, h_{t-1})$<br>上下文向量$C$为:&emsp;&emsp;&emsp;&emsp;$C = q(h_1, h_2, h_3, … , h_T)$  </p>
 <h4 id="解码器Decoder"><a href="#解码器Decoder" class="headerlink" title="解码器Decoder"></a>解码器Decoder</h4><p>&emsp;&emsp;Decoder也是一个RNN网络，其工作原理如下：对于输出序列的时间步$t{‘}$, 解码器以上一时间步的隐层状态$h_{t{‘}-1}$以及上下文向量$C$为输入，输出$y_{t{‘}}$的条件概率，即$P(y_{t{‘}}|y_1, y_2, … , y_{t{‘}-1}, C)$。</p>
@@ -637,15 +645,15 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
           <div class="post-nav">
             <div class="post-nav-next post-nav-item">
               
-                <a href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/" rel="next" title="Pandas VS Excel——函数填充、计算列">
-                  <i class="fa fa-chevron-left"></i> Pandas VS Excel——函数填充、计算列
-                </a>
-              
             </div>
 
             <span class="post-nav-divider"></span>
 
             <div class="post-nav-prev post-nav-item">
+              
+                <a href="/2020/05/13/transformer/" rel="prev" title="Transformer">
+                  Transformer <i class="fa fa-chevron-right"></i>
+                </a>
               
             </div>
           </div>
@@ -694,7 +702,7 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#循环神经网络-Recurrent-Neural-Networks"><span class="nav-number">1.</span> <span class="nav-text">循环神经网络(Recurrent Neural Networks)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么不是多层感知机-全连接前馈网络-？"><span class="nav-number">1.0.0.1.</span> <span class="nav-text">为什么不是多层感知机(全连接前馈网络)？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么是循环神经网络？"><span class="nav-number">1.0.0.2.</span> <span class="nav-text">为什么是循环神经网络？</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#1-Seq2Seq模型"><span class="nav-number">1.1.</span> <span class="nav-text">1. Seq2Seq模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-1-Encoder-Decoder架构"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.1 Encoder-Decoder架构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-1-1-架构基本原理及组成"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">1.1.1 架构基本原理及组成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编码器Encoder"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">编码器Encoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解码器Decoder"><span class="nav-number">1.1.1.3.</span> <span class="nav-text">解码器Decoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#训练模型"><span class="nav-number">1.1.1.4.</span> <span class="nav-text">训练模型</span></a></li></ol></li></ol></li></ol></li></ol></div>
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#循环神经网络-Recurrent-Neural-Networks"><span class="nav-number">1.</span> <span class="nav-text">循环神经网络(Recurrent Neural Networks)</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么不是多层感知机-全连接前馈网络-？"><span class="nav-number">1.1.</span> <span class="nav-text">为什么不是多层感知机(全连接前馈网络)？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#为什么是循环神经网络？"><span class="nav-number">1.2.</span> <span class="nav-text">为什么是循环神经网络？</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Seq2Seq模型"><span class="nav-number">2.</span> <span class="nav-text">Seq2Seq模型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Encoder-Decoder架构"><span class="nav-number">2.1.</span> <span class="nav-text">Encoder-Decoder架构</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#架构基本原理及组成"><span class="nav-number">2.2.</span> <span class="nav-text">架构基本原理及组成</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#编码器Encoder"><span class="nav-number">2.3.</span> <span class="nav-text">编码器Encoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#解码器Decoder"><span class="nav-number">2.4.</span> <span class="nav-text">解码器Decoder</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#训练模型"><span class="nav-number">2.5.</span> <span class="nav-text">训练模型</span></a></li></ol></li></ol></div>
         
       </div>
       <!--/noindex-->
@@ -713,7 +721,7 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">2</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -739,7 +747,7 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -809,7 +817,7 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
 
       </div>
 		<div id="music163player">
-		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=3020987120&auto=0&height=430"></iframe>	
+		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=4899849689&auto=0&height=430"></iframe>
 		</div>
     </div>
   </aside>
@@ -830,12 +838,12 @@ Predicted translation:  are you still at home ? &lt;end&gt; </code></pre><p><img
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">37k</span>
+    <span title="站点总字数">71k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">34 分钟</span>
+    <span title="站点阅读时长">1:05</span>
 </div>
 
 <!--

@@ -244,6 +244,130 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/13/transformer/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="老许头">
+      <meta itemprop="description" content="在我26岁的一天">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Y&B">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+            
+            <a href="/2020/05/13/transformer/" class="post-title-link" itemprop="url">Transformer</a>
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-13 21:16:12 / 修改时间：21:32:02" itemprop="dateCreated datePublished" datetime="2020-05-13T21:16:12+08:00">2020-05-13</time>
+            </span>
+          
+            
+
+            
+          
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/13/transformer/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/05/13/transformer/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>48k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>44 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <ul>
+<li>基于attention的seq2seq<ul>
+<li>去除定长编码瓶颈， 信息无损从Encoder传到Decoder</li>
+</ul>
+</li>
+<li>但是<ul>
+<li>采用GRU， 计算仍然有瓶颈， 并行度不高（计算时存在相互依赖，不管是Encoder还是Decoder,在处理seq时都是从前到后的处理模式，前面的词没有处理完，后面的词不能进行处理，并行度不高）</li>
+<li>只有Encoder和Decoder之间有attention（Encoder和Decoder之间存在attention, 但是Encoder和Decoder自身不存在attention，这里可以将attention理解为一种无损的信息传递机制，如果Encoder不同时间步之间不存在attention机制，则只能通过GRU或LSTM的隐含状态进行信息传递，但是这种信息传递的机制在序列长度较长时会产生信息损失）</li>
+</ul>
+</li>
+</ul>
+          <!--noindex-->
+          
+            <div class="post-button">
+              <a class="btn" href="/2020/05/13/transformer/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+          <div class="post-eof"></div>
+        
+      </footer>
+  </article>
+  
+  
+  
+
+    
+        
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
     <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/07/seq2seq-attention/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -273,11 +397,19 @@
                 
               
 
-              <time title="创建时间：2020-05-07 18:47:01 / 修改时间：18:59:31" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
+              <time title="创建时间：2020-05-07 18:47:01" itemprop="dateCreated datePublished" datetime="2020-05-07T18:47:01+08:00">2020-05-07</time>
             </span>
           
             
 
+            
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-05-13 21:32:47" itemprop="dateModified" datetime="2020-05-13T21:32:47+08:00">2020-05-13</time>
+              </span>
             
           
 
@@ -327,669 +459,18 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h1><hr>
-<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ol>
-<li>多层感知机不擅长或者说不能处理可变长序列<br> 多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
-<li>多层感知机不能进行参数共享<br> 如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
-</ol>
-<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ol>
+          <h3 id="循环神经网络-Recurrent-Neural-Networks"><a href="#循环神经网络-Recurrent-Neural-Networks" class="headerlink" title="循环神经网络(Recurrent Neural Networks)"></a>循环神经网络(Recurrent Neural Networks)</h3><hr>
+<h4 id="为什么不是多层感知机-全连接前馈网络-？"><a href="#为什么不是多层感知机-全连接前馈网络-？" class="headerlink" title="为什么不是多层感知机(全连接前馈网络)？"></a>为什么不是多层感知机(全连接前馈网络)？</h4><ul>
+<li>多层感知机不擅长或者说不能处理可变长序列<br>  多层感知机只能处理输入数据和输出数据具有固定长度的序列。即使可将每条数据都填充(pad)至最大长度，用以训练多层感知机，但似乎仍然不是一个很好的模型。</li>
+<li>多层感知机不能进行参数共享<br>  如果在每个时间点都具有相同的参数，不但不能泛化到训练时没有见过的序列长度的数据，也不能在时间上共享不同序列长度和不同位置的统计强度。比如在一句话的两个不同位置出现了两次单词-Harry，多层感知机需要对每个Harry都进行学习。</li>
+</ul>
+<h4 id="为什么是循环神经网络？"><a href="#为什么是循环神经网络？" class="headerlink" title="为什么是循环神经网络？"></a>为什么是循环神经网络？</h4><ul>
 <li>不同时间步内的参数共享</li>
-<li>不需要学习每个位置的规则</li></ol>
+<li>不需要学习每个位置的规则</li></ul>
           <!--noindex-->
           
             <div class="post-button">
               <a class="btn" href="/2020/05/07/seq2seq-attention/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-          <div class="post-eof"></div>
-        
-      </footer>
-  </article>
-  
-  
-  
-
-    
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/30/Pandas-VS-Excel——函数填充、计算列/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="老许头">
-      <meta itemprop="description" content="在我26岁的一天">
-      <meta itemprop="image" content="/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Y&B">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-            
-            <a href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/" class="post-title-link" itemprop="url">Pandas VS Excel——函数填充、计算列</a>
-          
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-30 13:37:01 / 修改时间：13:41:13" itemprop="dateCreated datePublished" datetime="2019-10-30T13:37:01+08:00">2019-10-30</time>
-            </span>
-          
-            
-
-            
-          
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-        
-      
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/" itemprop="commentCount"></span></a>
-  </span>
-  
-  
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">本文字数：</span>
-              
-              <span>603</span>
-            </span>
-          
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              
-              <span>1 分钟</span>
-            </span>
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br></pre></td></tr></table></figure>
-
-<h3 id="导入数据帧"><a href="#导入数据帧" class="headerlink" title="导入数据帧"></a>导入数据帧</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">books = pd.read_excel(<span class="string">'C:/Temp/Books.xlsx'</span>, index_col=<span class="string">'ID'</span>)</span><br></pre></td></tr></table></figure>
-          <!--noindex-->
-          
-            <div class="post-button">
-              <a class="btn" href="/2019/10/30/Pandas-VS-Excel——函数填充、计算列/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-          <div class="post-eof"></div>
-        
-      </footer>
-  </article>
-  
-  
-  
-
-    
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/29/L1与L2正则化的区别/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="老许头">
-      <meta itemprop="description" content="在我26岁的一天">
-      <meta itemprop="image" content="/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Y&B">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-            
-            <a href="/2019/10/29/L1与L2正则化的区别/" class="post-title-link" itemprop="url">L1与L2正则化的区别</a>
-          
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-29 20:28:48 / 修改时间：20:34:49" itemprop="dateCreated datePublished" datetime="2019-10-29T20:28:48+08:00">2019-10-29</time>
-            </span>
-          
-            
-
-            
-          
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/ANN/" itemprop="url" rel="index"><span itemprop="name">ANN</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-        
-      
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2019/10/29/L1与L2正则化的区别/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/29/L1与L2正则化的区别/" itemprop="commentCount"></span></a>
-  </span>
-  
-  
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">本文字数：</span>
-              
-              <span>180</span>
-            </span>
-          
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              
-              <span>1 分钟</span>
-            </span>
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>&emsp;&emsp;正则化的作用主要是防止过拟合。对代价函数添加正则化项可以限制模型的复杂程度，使得模型在复杂度和准确度上达到平衡。<br>正则化可以看成是损失函数添加惩罚项。所谓惩罚就是指减小模型中的高阶项，但由于无法得知高阶项具体为哪些，所以需要对所有w参数进行惩罚。由于实际应用中，w的参数远多于b参数，所以约定俗成只对w参数进行惩罚，而不对b参数进行惩罚。</p>
-          <!--noindex-->
-          
-            <div class="post-button">
-              <a class="btn" href="/2019/10/29/L1与L2正则化的区别/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-          <div class="post-eof"></div>
-        
-      </footer>
-  </article>
-  
-  
-  
-
-    
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/29/Pandas-VS-Excel/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="老许头">
-      <meta itemprop="description" content="在我26岁的一天">
-      <meta itemprop="image" content="/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Y&B">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-            
-            <a href="/2019/10/29/Pandas-VS-Excel/" class="post-title-link" itemprop="url">Pandas VS Excel</a>
-          
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-29 20:16:43 / 修改时间：20:26:52" itemprop="dateCreated datePublished" datetime="2019-10-29T20:16:43+08:00">2019-10-29</time>
-            </span>
-          
-            
-
-            
-          
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/数据挖掘/" itemprop="url" rel="index"><span itemprop="name">数据挖掘</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-        
-      
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2019/10/29/Pandas-VS-Excel/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/29/Pandas-VS-Excel/" itemprop="commentCount"></span></a>
-  </span>
-  
-  
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">本文字数：</span>
-              
-              <span>3.9k</span>
-            </span>
-          
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              
-              <span>4 分钟</span>
-            </span>
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="行、列、单元格"><a href="#行、列、单元格" class="headerlink" title="行、列、单元格"></a>行、列、单元格</h1><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">import pandas as pd</span><br><span class="line">L1 = [100, 200, 300]</span><br><span class="line">L2 = [&apos;x&apos;, &apos;y&apos;, &apos;z&apos;]</span><br><span class="line">s1 = pd.Series(L1, index=L2)</span><br><span class="line">print(s1)</span><br></pre></td></tr></table></figure>
-
-<pre><code>x    100
-y    200
-z    300
-dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义行还是列。只有当添加到一个DataFrame时才是距离的行和列。</p>
-          <!--noindex-->
-          
-            <div class="post-button">
-              <a class="btn" href="/2019/10/29/Pandas-VS-Excel/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-          <div class="post-eof"></div>
-        
-      </footer>
-  </article>
-  
-  
-  
-
-    
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/12/神经网络算法代码实现/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="老许头">
-      <meta itemprop="description" content="在我26岁的一天">
-      <meta itemprop="image" content="/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Y&B">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-            
-            <a href="/2019/10/12/神经网络算法代码实现/" class="post-title-link" itemprop="url">神经网络算法代码实现</a>
-          
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-12 21:10:03 / 修改时间：21:32:43" itemprop="dateCreated datePublished" datetime="2019-10-12T21:10:03+08:00">2019-10-12</time>
-            </span>
-          
-            
-
-            
-          
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a></span>
-
-                
-                
-                  ，
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Algorithm/Python/" itemprop="url" rel="index"><span itemprop="name">Python</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-        
-      
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2019/10/12/神经网络算法代码实现/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/12/神经网络算法代码实现/" itemprop="commentCount"></span></a>
-  </span>
-  
-  
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">本文字数：</span>
-              
-              <span>8.7k</span>
-            </span>
-          
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              
-              <span>8 分钟</span>
-            </span>
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>NeraulNetwork.py<br></p>
-          <!--noindex-->
-          
-            <div class="post-button">
-              <a class="btn" href="/2019/10/12/神经网络算法代码实现/#more" rel="contents">
-                阅读全文 &raquo;
-              </a>
-            </div>
-          
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-          <div class="post-eof"></div>
-        
-      </footer>
-  </article>
-  
-  
-  
-
-    
-        
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CN">
-    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2019/10/08/神经网络与深度学习/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="老许头">
-      <meta itemprop="description" content="在我26岁的一天">
-      <meta itemprop="image" content="/images/avatar.jpg">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Y&B">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-            
-            <a href="/2019/10/08/神经网络与深度学习/" class="post-title-link" itemprop="url">Cases of the Artificial Neural Networks</a>
-          
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              
-                
-              
-
-              <time title="创建时间：2019-10-08 17:00:07" itemprop="dateCreated datePublished" datetime="2019-10-08T17:00:07+08:00">2019-10-08</time>
-            </span>
-          
-            
-
-            
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">更新于</span>
-                <time title="修改时间：2019-10-09 19:52:15" itemprop="dateModified" datetime="2019-10-09T19:52:15+08:00">2019-10-09</time>
-              </span>
-            
-          
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">分类于</span>
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a></span>
-
-                
-                
-                  ，
-                
-              
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/Deep-Learning/Neural-Network/" itemprop="url" rel="index"><span itemprop="name">Neural Network</span></a></span>
-
-                
-                
-              
-            </span>
-          
-
-          
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-        
-      
-      <span class="post-meta-item-text">Valine：</span>
-    
-    <a title="valine" href="/2019/10/08/神经网络与深度学习/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/10/08/神经网络与深度学习/" itemprop="commentCount"></span></a>
-  </span>
-  
-  
-          <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">本文字数：</span>
-              
-              <span>531</span>
-            </span>
-          
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              
-              <span>1 分钟</span>
-            </span>
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>&emsp;&emsp;人工神经网络（Artificial Neural Networks,简写ANN）是以一种模仿动物神经网络特征，进行分布式并行神经处理的算法数学模型。由大量的节点（或称神经元）组成。每个节点对应不同的输出函数，称为<strong>激活函数</strong>（activation function）,节点与节点之间对应不同的加权值，称之为<strong>权重</strong>。</p>
-          <!--noindex-->
-          
-            <div class="post-button">
-              <a class="btn" href="/2019/10/08/神经网络与深度学习/#more" rel="contents">
                 阅读全文 &raquo;
               </a>
             </div>
@@ -1061,7 +542,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
         
           <a href="/archives/">
         
-          <span class="site-state-item-count">6</span>
+          <span class="site-state-item-count">2</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -1087,7 +568,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
             <a href="/tags/">
           
         
-        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-count">12</span>
         <span class="site-state-item-name">标签</span>
         </a>
       </div>
@@ -1157,7 +638,7 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
 
       </div>
 		<div id="music163player">
-		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=3020987120&auto=0&height=430"></iframe>	
+		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=4899849689&auto=0&height=430"></iframe>
 		</div>
     </div>
   </aside>
@@ -1178,12 +659,12 @@ dtype: int64</code></pre><p>此时只是定义了一个序列，并没有定义�
     <span class="post-meta-item-icon">
       <i class="fa fa-area-chart"></i>
     </span>
-    <span title="站点总字数">37k</span>
+    <span title="站点总字数">71k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
-    <span title="站点阅读时长">34 分钟</span>
+    <span title="站点阅读时长">1:05</span>
 </div>
 
 <!--
