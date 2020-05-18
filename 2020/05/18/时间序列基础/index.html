@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+
+
+
+
+
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 3.9.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.4.1">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.4.1">
+  <link rel="mask-icon" href="/images/logo.svg?v=7.4.1" color="#222">
+
+<link rel="stylesheet" href="/css/main.css?v=7.4.1">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.7.0">
+  <link rel="stylesheet" href="/lib/pace/pace-theme-mac-osx.min.css?v=1.0.2">
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+
+
+<script id="hexo-configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '7.4.1',
+    exturl: false,
+    sidebar: {"position":"left","width":300,"display":"post","offset":12,"onmobile":false},
+    copycode: {"enable":false,"show_result":false,"style":null},
+    back2top: {"enable":true,"sidebar":false,"scrollpercent":false},
+    bookmark: {"enable":false,"color":"#222","save":"auto"},
+    fancybox: false,
+    mediumzoom: false,
+    lazyload: false,
+    pangu: false,
+    algolia: {
+      appID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    },
+    localsearch: {"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},
+    path: 'search.xml',
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    translation: {
+      copy_button: '复制',
+      copy_success: '复制成功',
+      copy_failure: '复制失败'
+    },
+    sidebarPadding: 40
+  };
+</script>
+
+  <meta name="description" content="数据分析的架构（3A）： Data Aggregation Data Analysis Data Activation   时间序列分析与回归分析的区别: 在选择模型前，我们需要确定结果与变量之间的关系。回归分析训练得到的是目标变量y与自变量x（一个或者多个）的相关性，然后通过新的自变量x来预测目标变量y。而时间序列分析得到的是目标变量y与时间的相关性。 回归分析擅长的是多变量与目标结果之间的分析">
+<meta name="keywords" content="Time Series,ARIMA,ACP、PACF">
+<meta property="og:type" content="article">
+<meta property="og:title" content="时间序列分析及预测基础">
+<meta property="og:url" content="http://xuwentao.com/2020/05/18/时间序列基础/index.html">
+<meta property="og:site_name" content="Y&amp;B">
+<meta property="og:description" content="数据分析的架构（3A）： Data Aggregation Data Analysis Data Activation   时间序列分析与回归分析的区别: 在选择模型前，我们需要确定结果与变量之间的关系。回归分析训练得到的是目标变量y与自变量x（一个或者多个）的相关性，然后通过新的自变量x来预测目标变量y。而时间序列分析得到的是目标变量y与时间的相关性。 回归分析擅长的是多变量与目标结果之间的分析">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="http://xuwentao.com/2020/05/18/时间序列基础/output_13_0.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/18/时间序列基础/output_15_0.png">
+<meta property="og:image" content="http://xuwentao.com/2020/05/18/时间序列基础/attachment:image.png">
+<meta property="og:updated_time" content="2020-05-18T08:32:18.426Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="时间序列分析及预测基础">
+<meta name="twitter:description" content="数据分析的架构（3A）： Data Aggregation Data Analysis Data Activation   时间序列分析与回归分析的区别: 在选择模型前，我们需要确定结果与变量之间的关系。回归分析训练得到的是目标变量y与自变量x（一个或者多个）的相关性，然后通过新的自变量x来预测目标变量y。而时间序列分析得到的是目标变量y与时间的相关性。 回归分析擅长的是多变量与目标结果之间的分析">
+<meta name="twitter:image" content="http://xuwentao.com/2020/05/18/时间序列基础/output_13_0.png">
+  <link rel="canonical" href="http://xuwentao.com/2020/05/18/时间序列基础/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true,
+    isPage: false,
+    isArchive: false
+  };
+</script>
+
+  <title>时间序列分析及预测基础 | Y&B</title>
+  
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+	<a href="https://github/p196025" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Y&B</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+      
+      
+      
+        
+        <li class="menu-item menu-item-home">
+      
+    
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-tags">
+      
+    
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-categories">
+      
+    
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+      
+      
+      
+        
+        <li class="menu-item menu-item-archives">
+      
+    
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a href="javascript:;" class="popup-trigger">
+        
+          <i class="fa fa-search fa-fw"></i>搜索</a>
+      </li>
+    
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="none"
+           placeholder="搜索..." spellcheck="false"
+           type="text" id="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+            
+
+          <div id="content" class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://xuwentao.com/2020/05/18/时间序列基础/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="Attention is all you need.">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Y&B">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">时间序列分析及预测基础
+
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              
+                
+              
+
+              <time title="创建时间：2020-05-18 16:28:56 / 修改时间：16:32:18" itemprop="dateCreated datePublished" datetime="2020-05-18T16:28:56+08:00">2020-05-18</time>
+            </span>
+          
+            
+
+            
+          
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+        
+      
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/05/18/时间序列基础/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2020/05/18/时间序列基础/" itemprop="commentCount"></span></a>
+  </span>
+  
+  
+          <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">本文字数：</span>
+              
+              <span>5.4k</span>
+            </span>
+          
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              
+              <span>5 分钟</span>
+            </span>
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>数据分析的架构（3A）：</p><ul>
+<li>Data Aggregation</li>
+<li>Data Analysis</li>
+<li>Data Activation  </li>
+</ul><p>时间序列分析与回归分析的区别:</p><ul>
+<li>在选择模型前，我们需要确定结果与变量之间的关系。回归分析训练得到的是目标变量y与自变量x（一个或者多个）的相关性，然后通过新的自变量x来预测目标变量y。而时间序列分析得到的是目标变量y与时间的相关性。</li>
+<li>回归分析擅长的是多变量与目标结果之间的分析，即便是单一变量，也往往与时间无关。而时间序列分析建立在事件变化的基础上，它会分析目标变量的趋势、周期、时期和不稳定因素等。这些趋势和周期都是在时间维度的基础上，是我们要观察的重要特征。  </li>
+</ul><a id="more"></a>
+
+
+
+<p>时间序列：</p>
+<ul>
+<li>机器学习模型， 包括AR、MA、ARMA、ARIMA</li>
+<li>神经网络模型， 用LSTM进行时间序列预测  </li>
+</ul>
+<p>时间序列及分解：</p>
+<ul>
+<li>平稳序列(stationary series)<br>基本上不存在趋势(Trend)的序列，各观察值基本上在某个固定的水平上波动</li>
+<li>非平稳序列(non-stationary series)<br>包含趋势、季节性或周期性的序列，可以只有一种成分，也可能是多种成分的组合</li>
+<li>趋势(trend)<br>时间序列在长时间内呈现出来的某种持续上升或者持续下降的变动，也称为长期趋势。</li>
+<li>季节性(seasonality)<br>时间序列在一年内重复出现的周期性波动。销售旺季，销售淡季，旅游旺季，旅游淡季。季节可以是任何一种周期性的变化，不一定是一年中的四季，含有季节成分的序列可能含有趋势，也可能不含有趋势。</li>
+<li>周期性(cyclicity)<br>通常是由经济环境的变化引起的不同于趋势变动，不是朝着单一方向的持续性运动，而是涨落相间的交替波动。不同于季节变动，季节变动有比较固定的规律， 变动周期大多为一年。周期性的循环波动无固定规律，变动周期大多在一年以上，且周期长短不一。</li>
+<li>随机性(irregular)<br>指受偶然因素影响所形成的的不规则性波动，在时间序列中无法预估。除去趋势、周期性、季节性的偶然性波动。  </li>
+</ul>
+<table>
+<thead>
+<tr>
+<th align="center">因素</th>
+<th align="center">举例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">长期趋势 Trend(T)</td>
+<td align="center">国内生产总值</td>
+</tr>
+<tr>
+<td align="center">季节变动 Season(S)</td>
+<td align="center">冰淇淋、羽绒服、裙子等</td>
+</tr>
+<tr>
+<td align="center">周期性 Cyclic(C)</td>
+<td align="center">太阳黑子数量变化</td>
+</tr>
+<tr>
+<td align="center">随机性 Irregular(I)</td>
+<td align="center">股票市场突然的利好、利空等信息的影响</td>
+</tr>
+</tbody></table>
+<h4 id="时间序列工具（statsmodels）"><a href="#时间序列工具（statsmodels）" class="headerlink" title="时间序列工具（statsmodels）"></a>时间序列工具（statsmodels）</h4><p>statsmodels主要包括如下子模块：</p>
+<ul>
+<li>回归模型：线性回归，广义线性模型，线性混合效应模</li>
+<li>方差分析(ANOVA)</li>
+<li>时间序列分析: AR, MA, ARMA, ARIMA等</li>
+</ul>
+<h4 id="AR模型"><a href="#AR模型" class="headerlink" title="AR模型"></a>AR模型</h4><ul>
+<li>Auto Regressive, 中文叫自回归模型</li>
+<li>认为过去若干时刻的点通过线性组合，再加上白噪声就可以预测未来某个时刻的点</li>
+<li>日常生活环境中就存在白噪声，在数据挖掘的过程中，可以把它理解为一个期望为0，方差为常数的纯随机过程。</li>
+<li>AR模型存在一个阶数p, 称为AR(p)模型，也叫做p阶自回归模型。指的是通过这个时刻点的前p个点，通过线性组合再加上白噪声来预测当前时刻点的值。</li>
+<li>AR是线性时间序列分析模型中最简单的模型，通过前面部分的数据与后面部分的数据之间的相关关系来建立回归方程：<br>$x_t = φ<em>1x</em>{t-1}+φ<em>2x</em>{t-2}+…+φ<em>px</em>{t-p}+φ<em>1x</em>{t-1}+u_t$<br>AR(p),表示p阶的自回归过程，$φ$为自回归系数，$u_t$表示白噪声，是时间序列中数值的随机波动。这些波动会相互抵消，即累计为0</li>
+<li>如果只有一个时间记录点时，则为AR(1),即一阶自回归过程：<br>$x_t = φ<em>1x</em>{t-1}+φ<em>1x</em>{t-1}$</li>
+</ul>
+<h4 id="MA模型"><a href="#MA模型" class="headerlink" title="MA模型"></a>MA模型</h4><ul>
+<li>Moving Average(滑动平均模型)</li>
+<li>与AR模型大同小异， AR模型是历史时序值的线性组合+白噪声，MA是通过历史白噪声进行线性组合来影响当前时刻点</li>
+<li>MA模型中的历史白噪声通过影响历史时序值，从而间接影响到当前时刻的预测值</li>
+<li>MA模型存在一个阶数q,称为MA(q)模型，也叫做q阶移动平均模型</li>
+<li>AR与MA模型都存在阶数，在AR模型中，用p表示，在MA模型中，用q表示，这两个模型大同小异，与AR模型不同的是MA模型是历史白噪声的线性组合</li>
+<li>MA模型， 通过将前面一段时间序列中的白噪声序列进行加权求和，可以得到移动平均方程：<br>$x_t = u_t + φ<em>1u</em>{t-1}+φ<em>2u</em>{t-2}+…+φ<em>qu</em>{t-q}$  </li>
+<li>MA(q)表示q阶移动平均过程，$φ$为移动回归系数，$u_t$为不同时间点的白噪声</li>
+<li>$x_t$为第t天的股票价格，$u_t$为第$t$天的新闻影响，当天的价格受当天新闻的影响，也受昨天新闻的影响</li>
+</ul>
+<h4 id="ARMA模型"><a href="#ARMA模型" class="headerlink" title="ARMA模型"></a>ARMA模型</h4><ul>
+<li>Auto Regressive Moving Average(自回归滑动平均模型)</li>
+<li>AR模型和MA模型的混合，相比AR模型和MA模型，它有更准确的估计</li>
+<li>ARMA模型存在$p$和$q$两个阶数，称为ARMA(p, q)模型，它有更准确的估计<br>$x_t =u_t + φ<em>1u</em>{t-1}+φ<em>2u</em>{t-2}+…+φ<em>qu</em>{t-q}+θ<em>1x</em>{t-1}+θ<em>2x</em>{t-2}+…+θ<em>px</em>{t-p}$ </li>
+<li>自回归滑动平均模型结合了两个模型的特点，AR解决当前数据与前期数据之间的关系，MA则可以解决随机变动，即噪声问题</li>
+</ul>
+<h4 id="ARIMA模型"><a href="#ARIMA模型" class="headerlink" title="ARIMA模型"></a>ARIMA模型</h4><ul>
+<li>Auto Regressive Integrated Moving Average模型，中文叫差分自回归滑动平均模型，也叫求和自回归滑动平均模型</li>
+<li>相比于ARMA，ARIMA多了一个差分的过程，作用是对不平稳数据进行差分平稳，在差分平稳后再进行建模</li>
+<li>ARIMA的原理和ARMA模型一样。相比于ARMA(p,q)的两个阶数，ARIMA是一个三元组的阶数（p,d,q），称为ARIMA(p,d,q)模型，其中d是差分阶数</li>
+<li>AR,MA是ARMA的特殊形式，而ARMA是ARIMA的特殊形式</li>
+<li>ARIMA模型步骤：<ul>
+<li>Step1, 观察时间序列数据，判断是否为平稳序列</li>
+<li>Step2, 对于非平稳时间序列要先进行d阶差分运算，化为平稳时间序列</li>
+<li>Step3, 使用ARIMA（p,d,q）模型进行训练拟合，找到最优的（p,d,q）,及训练好的模型</li>
+<li>Step4, 使用训练好的ARIMA模型进行预测，并对差分进行还原</li>
+</ul>
+</li>
+<li>ARIMA用差分将不平稳数据先变得平稳，再用ARIMA模型</li>
+</ul>
+<p>关于差分：</p>
+<ul>
+<li>差分=序列之间做差值，目的是得到平稳的序列，也就是去掉前面数值的影响</li>
+<li>一次差分为序列之间做一次差值，二次差分为在一次差分的基础上再做一次差分</li>
+<li>$f(x) = x^2$ 若x=[1, 4, 9, 11, …] (x有二次趋势)</li>
+<li>一次差分的结果为[4-1, 9-4, 16-9, 25-16 …] = [3, 5, 7, 9, 11, …], 此时x序列仍然不平稳，有一次上升的趋势，再做一次差分为[2,2,2,2…],此时x为平稳序列</li>
+</ul>
+<h4 id="ARMA工具"><a href="#ARMA工具" class="headerlink" title="ARMA工具"></a>ARMA工具</h4><ul>
+<li>from statsmodels.tsa.arima_model import ARMA</li>
+<li>ARMA(endog, order, exog = None)</li>
+<li>endog: endogenous variable, 代表内生变量， 又叫非政策性变量， 它是由模型决定的， 不被政策左右，可以说是我们想要分析的变量， 或者说是我们这次项目中需要用到的变量</li>
+<li>order: 代表p和q的值，也就是ARMA中的阶数</li>
+<li>exog: exogenous variables, 代表外生变量。外生变量和内生变量一样是经济模型中的两个重要变量。相对于内生变量而言， 外生变量又称作政策性变量， 在经济体制内受外部因素的影响，不是我们模型要研究的变量，如果我们想要创建ARMA（7，0）模型，可以写成ARMA(data,(7,0))，其中data是我们要观察的变量，(7,0)代表(p,q)的阶数。</li>
+<li>fit函数，进行拟合</li>
+<li>predict(start, end)函数，进行预测，其中start为预测的起始时间，end为预测的终止时间。</li>
+</ul>
+<p>ARIMA(p, d, q)阶数确定：</p>
+<table>
+<thead>
+<tr>
+<th align="left">模型</th>
+<th align="left">ACF</th>
+<th align="left">PACF</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">AR(p)</td>
+<td align="left">衰减趋于零(几何型或振荡型)</td>
+<td align="left">p阶后截尾</td>
+</tr>
+<tr>
+<td align="left">MA(q)</td>
+<td align="left">q阶后截尾</td>
+<td align="left">衰减趋于零(几何型或振荡型)</td>
+</tr>
+<tr>
+<td align="left">ARMA(p,q)</td>
+<td align="left">q阶后衰减趋于零(几何型或振荡型)</td>
+<td align="left">p阶后衰减趋于零(几何型或振荡型)</td>
+</tr>
+<tr>
+<td align="left">截尾： 落在置信区间内（95%的点后符合该规则）</td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+</tbody></table>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 用ARMA进行时间序列预测</span></span><br><span class="line"><span class="keyword">import</span> statsmodels.api <span class="keyword">as</span> sm</span><br><span class="line"><span class="keyword">from</span> statsmodels.tsa.arima_model <span class="keyword">import</span> ARMA</span><br><span class="line"><span class="keyword">import</span> pandas <span class="keyword">as</span> pd</span><br><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line">%matplotlib inline</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建数据</span></span><br><span class="line">data = [</span><br><span class="line">    <span class="number">3821</span>, <span class="number">4236</span>, <span class="number">6783</span>, <span class="number">4664</span>, <span class="number">2589</span>, <span class="number">2538</span>, <span class="number">3542</span>, <span class="number">4626</span>, <span class="number">5886</span>, <span class="number">6233</span>, <span class="number">4199</span>, <span class="number">3561</span>,</span><br><span class="line">    <span class="number">2335</span>, <span class="number">5636</span>, <span class="number">3524</span>, <span class="number">4327</span>, <span class="number">6064</span>, <span class="number">3912</span>, <span class="number">1356</span>, <span class="number">4305</span>, <span class="number">4379</span>, <span class="number">4592</span>, <span class="number">4233</span>, <span class="number">4281</span>,</span><br><span class="line">    <span class="number">1613</span>, <span class="number">1233</span>, <span class="number">4514</span>, <span class="number">3431</span>, <span class="number">2159</span>, <span class="number">2322</span>, <span class="number">4239</span>, <span class="number">4733</span>, <span class="number">2268</span>, <span class="number">5397</span>, <span class="number">5821</span>, <span class="number">6115</span>,</span><br><span class="line">    <span class="number">6631</span>, <span class="number">6474</span>, <span class="number">4134</span>, <span class="number">2728</span>, <span class="number">5753</span>, <span class="number">7130</span>, <span class="number">7860</span>, <span class="number">6991</span>, <span class="number">7499</span>, <span class="number">5301</span>, <span class="number">2808</span>, <span class="number">6755</span>,</span><br><span class="line">    <span class="number">6658</span>, <span class="number">6944</span>, <span class="number">6372</span>, <span class="number">8380</span>, <span class="number">7366</span>, <span class="number">6352</span>, <span class="number">8333</span>, <span class="number">8281</span>, <span class="number">11548</span>, <span class="number">10823</span>, <span class="number">13642</span>, <span class="number">9973</span>,</span><br><span class="line">    <span class="number">6723</span>, <span class="number">13416</span>, <span class="number">12205</span>, <span class="number">13942</span>, <span class="number">9590</span>, <span class="number">11693</span>, <span class="number">9276</span>, <span class="number">6519</span>, <span class="number">6863</span>, <span class="number">8237</span>, <span class="number">10122</span>,</span><br><span class="line">    <span class="number">8646</span>, <span class="number">9749</span>, <span class="number">5346</span>, <span class="number">4836</span>, <span class="number">9806</span>, <span class="number">7502</span>, <span class="number">9387</span>, <span class="number">11078</span>, <span class="number">9832</span>, <span class="number">6886</span>, <span class="number">4285</span>, <span class="number">8351</span>,</span><br><span class="line">    <span class="number">9725</span>, <span class="number">11844</span>, <span class="number">12387</span>, <span class="number">10666</span>, <span class="number">7072</span>, <span class="number">6429</span>, <span class="number">7777</span></span><br><span class="line">]</span><br><span class="line">print(len(data))</span><br><span class="line">data = pd.Series(data)</span><br><span class="line"></span><br><span class="line">data_index = sm.tsa.datetools.dates_from_range(<span class="string">'1901'</span>, <span class="string">'1990'</span>)</span><br></pre></td></tr></table></figure>
+
+<pre><code>90</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 绘制数据图</span></span><br><span class="line">data.index = pd.Index(data_index)</span><br><span class="line">data.plot(figsize=(<span class="number">12</span>, <span class="number">8</span>))</span><br><span class="line">plt.show()</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/18/时间序列基础/output_13_0.png" alt="png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 创建ARMA模型</span></span><br><span class="line">arma=ARMA(data,(<span class="number">7</span>,<span class="number">0</span>)).fit()</span><br><span class="line">print(<span class="string">'AIC:%0.4f'</span>%arma.aic)</span><br></pre></td></tr></table></figure>
+
+<pre><code>C:\Users\Administrator\Anaconda3\lib\site-packages\statsmodels\tsa\base\tsa_model.py:162: ValueWarning: No frequency information was provided, so inferred frequency A-DEC will be used.
+  % freq, ValueWarning)
+
+
+AIC:1615.3524</code></pre><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 模型预测</span></span><br><span class="line">predict_y = arma.predict(<span class="string">'1990'</span>, <span class="string">'2000'</span>)</span><br><span class="line"><span class="comment"># 预测结果绘制</span></span><br><span class="line">fig, ax = plt.subplots(figsize=(<span class="number">12</span>, <span class="number">8</span>))</span><br><span class="line">ax=data.loc[<span class="string">'1901'</span>:].plot(ax=ax)</span><br><span class="line">predict_y.plot(ax=ax)</span><br><span class="line">plt.show()</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2020/05/18/时间序列基础/output_15_0.png" alt="png"></p>
+<h4 id="使用ARMA工具对沪市指数进行预测："><a href="#使用ARMA工具对沪市指数进行预测：" class="headerlink" title="使用ARMA工具对沪市指数进行预测："></a>使用ARMA工具对沪市指数进行预测：</h4><ul>
+<li><p>Step1, 数据加载&amp;探索<br>按照不同的时间尺度（天，月，季度，年）可以将数据压缩，得到不同时间尺度的数据，然后做可视化呈现。在这4个时间尺度上，我们选择“月”作为预测模型的时间尺度。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">df_month = df.resample(&apos;M&apos;).mean()</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Step2,模型选择&amp;训练，在给定范围内，选择最优超参数<br>创建ARMA时间序列模型。我们并不知道p和q取什么值时模型最优，因此可以给它们设定一个区间范围，然后使用网格搜索，计算不同模型的AIC数值，选择AIC最小时的模型</p>
+</li>
+<li><p>Step3,模型预测，可视化呈现<br>采用该ARMA模型预测未来3个月的沪市指数走势，并将结果做可视化呈现。</p>
+</li>
+</ul>
+<p>LSTM:</p>
+<ul>
+<li>LSTM, Long Short-Term Memory, 长短期记忆网络  </li>
+<li>可以避免常规RNN的梯度消失，在工业界有广泛应用</li>
+<li>引入了三个门函数：输入门（Input Gate）、遗忘门（Forget Gate）和输出门（Output Gate）来控制输入值、记忆值和输出值</li>
+<li>输入门决定当前时刻网络的状态有多少信息需要保存到内部状态中；遗忘门决定了过去的状态信息有多少需要丢弃=&gt;输入门和遗忘门是LSTM能够记忆长期依赖的关键</li>
+<li>输出门决定当前时刻的内部状态有多少信息需要输出到外部状态<br>一个LSTM单元在每个时间步会接受三个输入：</li>
+<li>$x_t$:当前时刻的输入</li>
+<li>$h_{t-1}$:上一时刻的外部状态</li>
+<li>$c_{t-1}$:上一时刻的内部状态<br>$x_t$和$h_{t-1}$同时作为三个门的输入,$б$是Logistic函数</li>
+</ul>
+<p><img src="/2020/05/18/时间序列基础/attachment:image.png" alt="image.png"></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+
+    </div>
+
+    
+    
+    
+        
+      
+        <div id="reward-container">
+  <div>谢谢老板！祝老板越来越大！</div>
+  <button id="reward-button" disable="enable" onclick="var qr = document.getElementById(&quot;qr&quot;); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    打赏
+  </button>
+  <div id="qr" style="display: none;">
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/wechatpay.jpg" alt=" 微信支付">
+        <p>微信支付</p>
+      </div>
+        
+      
+      <div style="display: inline-block">
+        <img src="/images/alipay.jpg" alt=" 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+      
+
+      <footer class="post-footer">
+          
+            
+          
+          <div class="post-tags">
+            
+              <a href="/tags/Time-Series/" rel="tag"><i class="fa fa-tag"></i> Time Series</a>
+            
+              <a href="/tags/ARIMA/" rel="tag"><i class="fa fa-tag"></i> ARIMA</a>
+            
+              <a href="/tags/ACP、PACF/" rel="tag"><i class="fa fa-tag"></i> ACP、PACF</a>
+            
+          </div>
+        
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-next post-nav-item">
+              
+                <a href="/2020/05/13/transformer/" rel="next" title="Transformer">
+                  <i class="fa fa-chevron-left"></i> Transformer
+                </a>
+              
+            </div>
+
+            <span class="post-nav-divider"></span>
+
+            <div class="post-nav-prev post-nav-item">
+              
+            </div>
+          </div>
+        
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    
+    <div class="comments" id="comments"></div>
+  
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+        
+        
+        
+        
+      
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#时间序列工具（statsmodels）"><span class="nav-number">1.</span> <span class="nav-text">时间序列工具（statsmodels）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AR模型"><span class="nav-number">2.</span> <span class="nav-text">AR模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#MA模型"><span class="nav-number">3.</span> <span class="nav-text">MA模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ARMA模型"><span class="nav-number">4.</span> <span class="nav-text">ARMA模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ARIMA模型"><span class="nav-number">5.</span> <span class="nav-text">ARIMA模型</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ARMA工具"><span class="nav-number">6.</span> <span class="nav-text">ARMA工具</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用ARMA工具对沪市指数进行预测："><span class="nav-number">7.</span> <span class="nav-text">使用ARMA工具对沪市指数进行预测：</span></a></li></ol></div>
+        
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image"
+      src="/images/avatar.jpg"
+      alt="">
+  <p class="site-author-name" itemprop="name"></p>
+  <div class="site-description" itemprop="description">Attention is all you need.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+    
+      
+      
+      <div class="site-state-item site-state-tags">
+        
+          
+            <a href="/tags/">
+          
+        
+        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-name">标签</span>
+        </a>
+      </div>
+    
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://github.com/P196025" title="GitHub &rarr; https://github.com/P196025" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="https://weibo.com/5578942666" title="微  博 &rarr; https://weibo.com/5578942666" rel="noopener" target="_blank"><i class="fa fa-fw fa-weibo"></i>微  博</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="mailto:291234254@qq.com" title="QQ邮箱 &rarr; mailto:291234254@qq.com" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>QQ邮箱</a>
+      </span>
+    
+      <span class="links-of-author-item">
+      
+      
+        
+      
+      
+        
+      
+        <a href="/291234254" title="微  信 &rarr; 291234254"><i class="fa fa-fw fa-wechat"></i>微  信</a>
+      </span>
+    
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title">
+      <i class="fa fa-fw fa-link"></i>
+      导 航
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://space.bilibili.com/370872984" title="https://space.bilibili.com/370872984" rel="noopener" target="_blank">bilibili</a>
+        </li>
+      
+    </ul>
+  </div>
+
+      </div>
+		<div id="music163player">
+		 <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=450 src="//music.163.com/outchain/player?type=0&id=4899849689&auto=0&height=430"></iframe>
+		</div>
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder"></span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    <span title="站点总字数">77k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">1:10</span>
+</div>
+
+<!--
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.9.0</div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.4.1</div>-->
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+  
+    <span class="post-meta-divider">|</span>
+  
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js?v=3.1.0"></script>
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+<script src="/js/utils.js?v=7.4.1"></script><script src="/js/motion.js?v=7.4.1"></script>
+<script src="/js/schemes/pisces.js?v=7.4.1"></script>
+
+<script src="/js/next-boot.js?v=7.4.1"></script>
+
+
+
+  
+
+
+
+
+
+
+
+
+  <script src="/js/local-search.js?v=7.4.1"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+  var GUEST = ['nick', 'mail', 'link'];
+  var guest = 'nick,mail,link';
+  guest = guest.split(',').filter(item => {
+    return GUEST.includes(item);
+  });
+  new Valine({
+    el: '#comments',
+    verify: false,
+    notify: false,
+    appId: 'tpW2iM2vzfyEhQ1HvWUwvCHH-gzGzoHsz',
+    appKey: 'jpljpKR66zCUmVNwtV0OPwS2',
+    placeholder: '快来发表您的意见吧~',
+    avatar: 'mm',
+    meta: guest,
+    pageSize: '10' || 10,
+    visitor: false,
+    lang: '' || 'zh-cn',
+    path: location.pathname,
+    recordIP: false,
+    serverURLs: ''
+  });
+}, window.Valine);
+</script>
+
+</body>
+</html>
+<!-- 页面点击小红心 -->
+<script type="text/javascript" src="/js/src/clicklove.js"></script>
